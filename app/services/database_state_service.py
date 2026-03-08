@@ -9,7 +9,7 @@ def database_exists() -> bool:
     if not url.drivername.startswith("postgresql"):
         return True
 
-    engine = create_engine(str(url.set(database="postgres")), future=True)
+    engine = create_engine(url.set(database="postgres").render_as_string(hide_password=False), future=True)
     try:
         with engine.connect() as connection:
             return bool(

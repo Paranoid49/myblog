@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.engine import make_url
 
-from app.core.config import settings
+from app.core.config import PROJECT_ROOT, settings
 from app.core.db import SessionLocal
 from app.services.database_bootstrap_service import (
     DatabaseBootstrapError,
@@ -17,7 +17,7 @@ from app.services.migration_service import upgrade_database
 from app.services.setup_service import SetupAlreadyInitializedError, initialize_site, is_initialized
 
 router = APIRouter(tags=["setup"])
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory=PROJECT_ROOT / "app" / "templates")
 
 
 @contextmanager

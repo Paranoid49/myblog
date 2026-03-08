@@ -3,12 +3,13 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
+from app.core.config import PROJECT_ROOT
 from app.core.db import get_db
 from app.services.auth_service import authenticate_user
 from app.services.setup_service import is_initialized
 
 router = APIRouter(prefix="/admin", tags=["admin-auth"])
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory=PROJECT_ROOT / "app" / "templates")
 
 
 @router.get("/login", response_class=HTMLResponse)

@@ -19,6 +19,15 @@ def test_build_maintenance_database_url_replaces_target_database_name() -> None:
     assert result.startswith("postgresql+psycopg://postgres:")
 
 
+def test_build_maintenance_database_url_preserves_real_password_for_engine_connection() -> None:
+    url = "postgresql+psycopg://postgres:123456@localhost:5432/myblog"
+
+    result = build_maintenance_database_url(url)
+
+    assert "***" not in result
+    assert "123456" in result
+
+
 def test_build_maintenance_database_url_rejects_non_postgresql_url() -> None:
     with pytest.raises(UnsupportedDatabaseBootstrapError):
         build_maintenance_database_url("sqlite:///./test.db")

@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
+from app.core.config import PROJECT_ROOT
 from app.core.db import SessionLocal, get_db
 from app.services.database_state_service import database_exists
 from app.services.post_service import get_post_by_slug, list_published_posts
@@ -10,7 +11,7 @@ from app.services.setup_service import get_site_settings, is_initialized
 from app.services.taxonomy_service import get_category_by_slug, get_tag_by_slug
 
 router = APIRouter(tags=["public"])
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory=PROJECT_ROOT / "app" / "templates")
 
 
 @router.get("/", response_class=HTMLResponse)

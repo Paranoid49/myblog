@@ -2,7 +2,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from app.core.security import hash_password, verify_password
-from app.services.auth_service import build_admin_user
+from app.models import User
+from app.services.auth_service import authenticate_user, build_admin_user
 
 
 def test_password_hash_and_verify() -> None:
@@ -17,6 +18,37 @@ def test_build_admin_user_hashes_password() -> None:
     assert user.username == "admin"
     assert user.password_hash != "secret123"
     assert verify_password("secret123", user.password_hash) is True
+
+
+def test_authenticate_user_returns_user_for_valid_credentials(db_session) -> None:
+    user = build_admin_user("admin", "secret123")
+    db_session.add(user)
+    db_session.commit()
+
+    result = authenticate_user(db_session, "admin", "secret123")
+
+    assert result is not None
+    assert result.username == "admin"
+
+
+def test_authenticate_user_returns_none_for_wrong_password(db_session) -> None:
+    user = build_admin_user("admin", "secret123")
+    db_session.add(user)
+    db_session.commit()
+
+    assert authenticate_user(db_session, "admin", "wrong") is None
+
+
+def test_authenticate_user_returns_none_for_inactive_user(db_session) -> None:
+    user = User(username="admin", password_hash=hash_password("secret123"), is_active=False)
+    db_session.add(user)
+    db_session.commit()
+
+    assert authenticate_user(db_session, "admin", "secret123") is None
+
+
+def test_authenticate_user_returns_none_for_missing_user(db_session) -> None:
+    assert authenticate_user(db_session, "missing", "secret123") is None
 
 
 def test_create_admin_script_exists() -> None:
@@ -194,6 +226,30 @@ def test_admin_login_sets_session(client, initialized_site, admin_user) -> None:
     assert response.status_code in (302, 303)
 
 
-def test_admin_logout_clears_session(client) -> None:
-    response = client.get("/admin/logout", follow_redirects=False)
-    assert response.status_code == 302
+def test_admin_login_rejects_invalid_password(client, initialized_site, admin_user) -> None:
+    response = client.post(
+        "/admin/login",
+        data={"username": "admin", "password": "wrong-password"},
+    )
+
+    assert response.status_code == 401
+    assert "用户名或密码错误" in response.text
+
+
+def test_admin_logout_clears_session(client, initialized_site, admin_user) -> None:
+    login_response = client.post(
+        "/admin/login",
+        data={"username": "admin", "password": "secret123"},
+        follow_redirects=False,
+    )
+    assert login_response.status_code in (302, 303)
+
+    logout_response = client.get("/admin/logout", follow_redirects=False)
+    assert logout_response.status_code in (302, 303)
+    assert logout_response.headers["location"] == "/admin/login"
+
+    protected_response = client.get("/admin/posts", follow_redirects=False)
+    assert protected_response.status_code in (302, 303)
+    assert protected_response.headers["location"] == "/admin/login"
+
+

@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.config import PROJECT_ROOT
 from app.core.db import get_db
 from app.models import Category, Post, Tag
 from app.schemas.post import PostCreate
@@ -11,7 +12,7 @@ from app.services.post_service import build_post, update_post
 from app.services.setup_service import is_initialized
 
 router = APIRouter(prefix="/admin/posts", tags=["admin-posts"])
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory=PROJECT_ROOT / "app" / "templates")
 
 
 def _require_initialized(db: Session) -> RedirectResponse | None:

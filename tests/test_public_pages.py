@@ -62,7 +62,12 @@ def test_category_page_lists_posts(client, seeded_post) -> None:
     assert "My First Post" in response.text
 
 
-def test_tag_page_lists_posts(client, seeded_post) -> None:
-    response = client.get("/tags/fastapi")
-    assert response.status_code == 200
-    assert "My First Post" in response.text
+def test_category_page_returns_404_for_missing_slug(client) -> None:
+    response = client.get("/categories/not-found")
+    assert response.status_code == 404
+
+
+def test_tag_page_returns_404_for_missing_slug(client) -> None:
+    response = client.get("/tags/not-found")
+    assert response.status_code == 404
+

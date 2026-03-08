@@ -8,3 +8,9 @@ def test_health_route_exists():
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_health_route_rejects_post_method() -> None:
+    client = TestClient(app)
+    response = client.post("/health")
+    assert response.status_code == 405

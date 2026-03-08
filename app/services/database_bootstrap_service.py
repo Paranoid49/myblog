@@ -14,7 +14,7 @@ def build_maintenance_database_url(database_url: str) -> str:
     url = make_url(database_url)
     if not url.drivername.startswith("postgresql"):
         raise UnsupportedDatabaseBootstrapError()
-    return str(url.set(database="postgres"))
+    return url.set(database="postgres").render_as_string(hide_password=False)
 
 
 def _get_target_database_name(database_url: str) -> str:
