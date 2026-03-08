@@ -5,7 +5,10 @@ sqlalchemy
 psycopg[binary]
 alembic
 passlib[bcrypt]
+bcrypt<4.1
 python-multipart
 pytest
 httpx
 pydantic-settings
+itsdangerous
+pypinyin
