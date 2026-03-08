@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ page_title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/admin.css') }}" />
+  </head>
+  <body>
+    <h1>{{ page_title }}</h1>
+    <form method="post" action="{{ form_action }}">
+      <label>
+        标题
+        <input name="title" type="text" value="{{ post.title if post else '' }}" />
+      </label>
+      <label>
+        摘要
+        <textarea name="summary">{{ post.summary if post and post.summary else '' }}</textarea>
+      </label>
+      <label>
+        正文
+        <textarea name="content">{{ post.content if post else '' }}</textarea>
+      </label>
+      <label>
+        分类
+        <select name="category_id">
+          {% for category in categories %}
+          <option value="{{ category.id }}" {% if post and post.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <fieldset>
+        <legend>标签</legend>
+        {% for tag in tags %}
+        <label>
+          <input name="tag_ids" type="checkbox" value="{{ tag.id }}" {% if tag.id in selected_tag_ids %}checked{% endif %}/>
+          {{ tag.name }}
+        </label>
+        {% endfor %}
+      </fieldset>
+      <button type="submit">{{ submit_label }}</button>
+    </form>
+  </body>
+</html>

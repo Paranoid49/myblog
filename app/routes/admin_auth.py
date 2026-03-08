@@ -5,13 +5,16 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.services.auth_service import authenticate_user
+from app.services.setup_service import is_initialized
 
 router = APIRouter(prefix="/admin", tags=["admin-auth"])
 templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/login", response_class=HTMLResponse)
-def login_page(request: Request) -> HTMLResponse:
+def login_page(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
+    if not is_initialized(db):
+        return RedirectResponse(url="/setup", status_code=302)
     return templates.TemplateResponse(request, "admin/login.html", {"error": None})
 
 
@@ -22,6 +25,9 @@ def login(
     password: str = Form(...),
     db: Session = Depends(get_db),
 ):
+    if not is_initialized(db):
+        return RedirectResponse(url="/setup", status_code=status.HTTP_302_FOUND)
+
     user = authenticate_user(db, username, password)
     if not user:
         return templates.TemplateResponse(

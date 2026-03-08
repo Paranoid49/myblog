@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} - 我的博客{% endblock %}
+
+{% block content %}
+  <article>
+    <h1>{{ post.title }}</h1>
+    {% if post.summary %}
+      <p>{{ post.summary }}</p>
+    {% endif %}
+    <div>{{ post.content }}</div>
+  </article>
+{% endblock %}

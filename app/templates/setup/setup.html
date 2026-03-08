@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>首次初始化</title>
+  </head>
+  <body>
+    <h1>初始化博客</h1>
+    {% if error %}
+    <p>{{ error }}</p>
+    {% endif %}
+    <form method="post" action="/setup">
+      <label>
+        博客标题
+        <input name="blog_title" type="text" />
+      </label>
+      <label>
+        管理员用户名
+        <input name="username" type="text" />
+      </label>
+      <label>
+        管理员密码
+        <input name="password" type="password" />
+      </label>
+      <label>
+        确认密码
+        <input name="confirm_password" type="password" />
+      </label>
+      <button type="submit">开始初始化</button>
+    </form>
+  </body>
+</html>

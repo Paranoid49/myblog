@@ -12,12 +12,17 @@ os.environ["SECRET_KEY"] = "test-secret-key"
 import app.models  # noqa: F401
 from app.core.db import Base, get_db
 from app.main import app as fastapi_app
+from app.models import Category, Post, SiteSettings, Tag
 from app.services.auth_service import build_admin_user
-
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(TEST_DATABASE_URL, future=True, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+
+def test_base_metadata_contains_blog_tables() -> None:
+    table_names = set(Base.metadata.tables.keys())
+    assert {"users", "categories", "tags", "posts", "post_tags", "site_settings"}.issubset(table_names)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -52,9 +57,67 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
 
 
 @pytest.fixture()
+def initialized_site(db_session: Session) -> SiteSettings:
+    settings = SiteSettings(blog_title="测试博客")
+    db_session.add(settings)
+    db_session.commit()
+    db_session.refresh(settings)
+    return settings
+
+
+@pytest.fixture()
 def admin_user(db_session: Session):
     user = build_admin_user("admin", "secret123")
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
     return user
+
+
+@pytest.fixture()
+def logged_in_admin(client: TestClient, initialized_site: SiteSettings, admin_user):
+    response = client.post(
+        "/admin/login",
+        data={"username": "admin", "password": "secret123"},
+        follow_redirects=False,
+    )
+    assert response.status_code in (302, 303)
+    return admin_user
+
+
+@pytest.fixture()
+def seeded_category(db_session: Session) -> Category:
+    category = Category(name="Python", slug="python")
+    db_session.add(category)
+    db_session.commit()
+    db_session.refresh(category)
+    return category
+
+
+@pytest.fixture()
+def seeded_tags(db_session: Session) -> list[Tag]:
+    tag = Tag(name="FastAPI", slug="fastapi")
+    db_session.add(tag)
+    db_session.commit()
+    db_session.refresh(tag)
+    return [tag]
+
+
+@pytest.fixture()
+def seeded_post(db_session: Session) -> Post:
+    category = Category(name="Python", slug="python")
+    tag = Tag(name="FastAPI", slug="fastapi")
+    post = Post(
+        title="My First Post",
+        slug="my-first-post",
+        summary="Intro",
+        content="Hello World",
+        category=category,
+        published_at=None,
+    )
+    post.tags.append(tag)
+
+    db_session.add_all([category, tag, post])
+    db_session.commit()
+    db_session.refresh(post)
+    return post
