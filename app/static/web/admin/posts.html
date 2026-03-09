@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>文章管理（静态页）</title>
+    <link rel="stylesheet" href="/static/web/assets/web.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="row">
+        <h1>文章管理（静态页）</h1>
+        <nav>
+          <a href="/static/web/admin/taxonomy.html">分类与标签</a>
+          <a href="/static/web/public/index.html">前台预览</a>
+          <button id="logout-btn" type="button">退出登录</button>
+        </nav>
+      </header>
+
+      <p id="posts-error" class="error"></p>
+
+      <section>
+        <h2>新建文章</h2>
+        <form id="create-post-form">
+          <label>
+            标题
+            <input name="title" type="text" required />
+          </label>
+          <label>
+            摘要
+            <textarea name="summary"></textarea>
+          </label>
+          <label>
+            正文
+            <textarea name="content" required></textarea>
+          </label>
+          <button type="submit">创建</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>文章列表</h2>
+        <ul id="posts-list"></ul>
+      </section>
+    </main>
+    <script type="module" src="/static/web/assets/posts.js"></script>
+  </body>
+</html>

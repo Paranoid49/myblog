@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.routes.admin_auth import router as admin_auth_router
 from app.routes.admin_posts import router as admin_posts_router
 from app.routes.admin_taxonomy import router as admin_taxonomy_router
+from app.routes.api_v1_auth import router as api_v1_auth_router
 from app.routes.api_v1_posts import router as api_v1_posts_router
 from app.routes.public import router as public_router
 from app.routes.setup import router as setup_router
@@ -22,6 +23,7 @@ app.include_router(setup_router)
 app.include_router(admin_auth_router)
 app.include_router(admin_posts_router)
 app.include_router(admin_taxonomy_router)
+app.include_router(api_v1_auth_router)
 app.include_router(api_v1_posts_router)
 app.include_router(public_router)
 

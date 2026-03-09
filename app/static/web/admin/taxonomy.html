@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>分类与标签（静态页）</title>
+    <link rel="stylesheet" href="/static/web/assets/web.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="row">
+        <h1>分类与标签（静态页）</h1>
+        <nav>
+          <a href="/static/web/admin/posts.html">文章管理</a>
+          <button id="logout-btn" type="button">退出登录</button>
+        </nav>
+      </header>
+
+      <p id="taxonomy-error" class="error"></p>
+
+      <section>
+        <h2>新建分类</h2>
+        <form id="create-category-form">
+          <label>
+            分类名称
+            <input name="name" type="text" required />
+          </label>
+          <button type="submit">创建分类</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>分类列表</h2>
+        <ul id="categories-list"></ul>
+      </section>
+
+      <section>
+        <h2>新建标签</h2>
+        <form id="create-tag-form">
+          <label>
+            标签名称
+            <input name="name" type="text" required />
+          </label>
+          <button type="submit">创建标签</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>标签列表</h2>
+        <ul id="tags-list"></ul>
+      </section>
+    </main>
+    <script type="module" src="/static/web/assets/taxonomy.js"></script>
+  </body>
+</html>
