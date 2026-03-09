@@ -33,6 +33,43 @@ python scripts/start_blog.py
 - 后台文章：`GET /api/v1/admin/posts`、`POST /api/v1/admin/posts`、`POST /api/v1/admin/posts/{id}/publish`、`POST /api/v1/admin/posts/{id}/unpublish`
 - 后台分类标签：`GET /api/v1/taxonomy`、`POST /api/v1/admin/categories`、`POST /api/v1/admin/tags`
 
+## 一键启动前后端开发服务
+
+如需同时启动后端与 React 前端开发服务，可执行：
+
+```bash
+python scripts/start_fullstack.py
+```
+
+脚本会自动：
+- 启动后端服务（含自动迁移）
+- 启动前端 Vite dev 服务
+- 自动打开浏览器首页：`http://127.0.0.1:8000/`
+
+可选参数：
+- `--backend-port` 指定后端端口（默认 8000）
+- `--frontend-port` 指定前端端口（默认 5173）
+- `--no-browser` 启动后不自动打开浏览器
+
+
+前端工程位于 `frontend/`，用于管理端 React 页面。
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+构建前端产物：
+
+```bash
+cd frontend
+npm run build
+```
+
+构建后可通过后端访问：`http://127.0.0.1:8000/app/admin/login`
+
+
 ## 四步完成清单
 
 - Step1 API 契约完善：已完成（统一 `code/message/data`，补齐前台详情、后台列表、taxonomy 与创建接口）

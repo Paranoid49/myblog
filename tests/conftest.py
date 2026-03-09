@@ -58,7 +58,12 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
 
 @pytest.fixture()
 def initialized_site(db_session: Session) -> SiteSettings:
-    settings = SiteSettings(blog_title="测试博客")
+    settings = SiteSettings(
+        blog_title="测试博客",
+        author_name="admin",
+        author_bio="",
+        author_email="",
+    )
     db_session.add(settings)
     db_session.commit()
     db_session.refresh(settings)
@@ -77,11 +82,11 @@ def admin_user(db_session: Session):
 @pytest.fixture()
 def logged_in_admin(client: TestClient, initialized_site: SiteSettings, admin_user):
     response = client.post(
-        "/admin/login",
+        "/api/v1/auth/login",
         data={"username": "admin", "password": "secret123"},
         follow_redirects=False,
     )
-    assert response.status_code in (302, 303)
+    assert response.status_code in (200, 302, 303)
     return admin_user
 
 

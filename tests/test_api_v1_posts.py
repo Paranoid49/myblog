@@ -165,3 +165,87 @@ def test_api_create_tag_rejects_duplicate(client, logged_in_admin, seeded_tags) 
     assert response.status_code == 409
     payload = response.json()
     assert payload["code"] == 1410
+
+
+def test_api_filter_admin_posts_by_category(client, logged_in_admin, seeded_post) -> None:
+    response = client.get(f"/api/v1/admin/posts?category_id={seeded_post.category_id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["code"] == 0
+    assert isinstance(payload["data"], list)
+    assert len(payload["data"]) >= 1
+
+
+def test_api_update_admin_post_success(client, logged_in_admin, seeded_post) -> None:
+    response = client.post(
+        f"/api/v1/admin/posts/{seeded_post.id}",
+        json={
+            "title": "Updated Title",
+            "summary": "Updated Summary",
+            "content": "# Updated Markdown",
+            "category_id": seeded_post.category_id,
+            "tag_ids": [tag.id for tag in seeded_post.tags],
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["code"] == 0
+    assert payload["data"]["title"] == "Updated Title"
+    assert payload["data"]["content"] == "# Updated Markdown"
+
+
+def test_api_import_markdown_success(client, logged_in_admin) -> None:
+    response = client.post(
+        "/api/v1/admin/posts/import-markdown",
+        json={
+            "markdown": "# 导入标题\n\n正文内容",
+            "category_id": None,
+            "tag_ids": [],
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["code"] == 0
+    assert payload["data"]["title"] == "导入标题"
+
+
+def test_api_export_markdown_success(client, logged_in_admin, seeded_post) -> None:
+    response = client.get(f"/api/v1/admin/posts/{seeded_post.id}/export-markdown")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["code"] == 0
+    assert payload["data"]["filename"].endswith(".md")
+    assert payload["data"]["markdown"].startswith("# ")
+
+
+def test_api_upload_image_success(client, logged_in_admin) -> None:
+    response = client.post(
+        "/api/v1/admin/media/images",
+        files={"file": ("a.png", b"\x89PNG\r\n\x1a\n", "image/png")},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["code"] == 0
+    assert payload["data"]["content_type"] == "image/png"
+    assert payload["data"]["url"].startswith("/static/uploads/")
+
+    from pathlib import Path
+
+    key = payload["data"]["key"]
+    (Path(__file__).resolve().parents[1] / "app" / "static" / "uploads" / key).unlink(missing_ok=True)
+
+
+def test_api_upload_image_rejects_invalid_type(client, logged_in_admin) -> None:
+    response = client.post(
+        "/api/v1/admin/media/images",
+        files={"file": ("a.txt", b"hello", "text/plain")},
+    )
+
+    assert response.status_code == 400
+    payload = response.json()
+    assert payload["code"] == 1411

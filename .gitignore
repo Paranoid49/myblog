@@ -15,10 +15,21 @@ __pycache__/
 .coverage
 htmlcov/
 
+# Local databases
+*.db
+*.sqlite3
+
 # Environment files
 .env
 .env.*
 !.env.example
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+
+# Runtime-generated files
+app/static/uploads/
 
 # IDE settings
 .idea/

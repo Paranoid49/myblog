@@ -1,16 +1,17 @@
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
+from app.core.database_provider import resolve_database_provider
 
 
 class Base(DeclarativeBase):
     pass
 
 
-engine = create_engine(settings.database_url, future=True)
+database_provider = resolve_database_provider(settings.database_url)
+engine = database_provider.create_engine(settings.database_url)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 

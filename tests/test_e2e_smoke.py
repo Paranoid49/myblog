@@ -1,45 +1,46 @@
+from unittest.mock import patch
+
+
 def test_minimal_flow_setup_login_create_publish_and_home_visible(client, db_session) -> None:
-    from app.models import Category
-    from app.services.setup_service import initialize_site
+    with patch("app.routes.setup.upgrade_database"):
+        login_setup = client.post(
+            "/setup",
+            data={
+                "blog_title": "我的博客",
+                "username": "admin",
+                "password": "secret123",
+                "confirm_password": "secret123",
+            },
+            follow_redirects=False,
+        )
+    assert login_setup.status_code in (302, 303)
+    assert login_setup.headers["location"] == "/admin/posts"
 
-    initialize_site(db_session, blog_title="我的博客", username="admin", password="secret123")
-
-    login = client.post(
-        "/admin/login",
-        data={"username": "admin", "password": "secret123"},
-        follow_redirects=False,
-    )
-    assert login.status_code in (302, 303)
-
-    category = Category(name="Python", slug="python")
-    db_session.add(category)
-    db_session.commit()
+    taxonomy_response = client.post("/api/v1/admin/categories", json={"name": "Python"})
+    assert taxonomy_response.status_code == 201
+    category_id = taxonomy_response.json()["data"]["id"]
 
     create_resp = client.post(
-        "/admin/posts/new",
-        data={
+        "/api/v1/admin/posts",
+        json={
             "title": "E2E 文章",
             "summary": "摘要",
-            "content": "正文",
-            "category_id": str(category.id),
+            "content": "# 正文\n\n这是内容",
+            "category_id": category_id,
+            "tag_ids": [],
         },
-        follow_redirects=False,
     )
-    assert create_resp.status_code in (302, 303)
+    assert create_resp.status_code == 201
+    post_id = create_resp.json()["data"]["id"]
 
-    posts_page = client.get("/admin/posts")
-    assert "E2E 文章" in posts_page.text
-
-    # 最后一篇就是刚创建的文章（列表按创建时间倒序）
-    import re
-
-    match = re.search(r"/admin/posts/(\d+)/publish", posts_page.text)
-    assert match is not None
-    post_id = int(match.group(1))
-
-    publish_resp = client.post(f"/admin/posts/{post_id}/publish", follow_redirects=False)
-    assert publish_resp.status_code in (302, 303)
+    publish_resp = client.post(f"/api/v1/admin/posts/{post_id}/publish")
+    assert publish_resp.status_code == 200
 
     home = client.get("/")
     assert home.status_code == 200
-    assert "E2E 文章" in home.text
+    assert '<div id="root"></div>' in home.text
+
+    list_resp = client.get("/api/v1/posts")
+    assert list_resp.status_code == 200
+    payload = list_resp.json()
+    assert any(item["title"] == "E2E 文章" for item in payload["data"])
