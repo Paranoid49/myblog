@@ -7,7 +7,9 @@ from app.services.post_service import (
     ensure_unique_slug,
     get_post_by_slug,
     list_published_posts,
+    publish_post,
     slugify,
+    unpublish_post,
     update_post,
 )
 
@@ -82,15 +84,46 @@ def test_update_post_replaces_fields_and_tags(db_session) -> None:
     assert [tag.slug for tag in updated.tags] == ["api"]
 
 
-def test_list_published_posts_returns_newest_first(db_session) -> None:
+def test_publish_post_sets_published_at() -> None:
+    post = Post(title="Draft", slug="draft", summary="S", content="C", category_id=1)
+
+    publish_post(post)
+
+    assert post.published_at is not None
+
+
+def test_unpublish_post_clears_published_at() -> None:
+    post = Post(
+        title="Published",
+        slug="published",
+        summary="S",
+        content="C",
+        category_id=1,
+        published_at=datetime.now(timezone.utc),
+    )
+
+    unpublish_post(post)
+
+    assert post.published_at is None
+
+
+def test_list_published_posts_returns_latest_published_first(db_session) -> None:
     category = Category(name="Python", slug="python")
+    draft_post = Post(
+        title="Draft",
+        slug="draft",
+        summary="Draft",
+        content="Draft",
+        category=category,
+        published_at=None,
+    )
     old_post = Post(
         title="Old",
         slug="old",
         summary="Old",
         content="Old",
         category=category,
-        created_at=datetime.now(timezone.utc) - timedelta(days=1),
+        published_at=datetime.now(timezone.utc) - timedelta(days=1),
     )
     new_post = Post(
         title="New",
@@ -98,9 +131,9 @@ def test_list_published_posts_returns_newest_first(db_session) -> None:
         summary="New",
         content="New",
         category=category,
-        created_at=datetime.now(timezone.utc),
+        published_at=datetime.now(timezone.utc),
     )
-    db_session.add_all([category, old_post, new_post])
+    db_session.add_all([category, draft_post, old_post, new_post])
     db_session.commit()
 
     posts = list_published_posts(db_session)

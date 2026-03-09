@@ -8,7 +8,7 @@ from app.core.config import PROJECT_ROOT
 from app.core.db import get_db
 from app.models import Category, Post, Tag
 from app.schemas.post import PostCreate
-from app.services.post_service import build_post, update_post
+from app.services.post_service import build_post, publish_post, unpublish_post, update_post
 from app.services.setup_service import is_initialized
 
 router = APIRouter(prefix="/admin/posts", tags=["admin-posts"])
@@ -25,6 +25,26 @@ def _require_login(request: Request) -> RedirectResponse | None:
     if not request.session.get("user_id"):
         return RedirectResponse(url="/admin/login", status_code=302)
     return None
+
+
+def _resolve_category_id(db: Session, category_id: str | None) -> int:
+    if category_id not in (None, ""):
+        try:
+            return int(category_id)
+        except ValueError:
+            pass
+
+    default_category = db.execute(select(Category).where(Category.slug == "default")).scalar_one_or_none()
+    if default_category is None:
+        default_category = db.execute(select(Category).where(Category.name == "默认分类")).scalar_one_or_none()
+
+    if default_category is None:
+        default_category = Category(name="默认分类", slug="default")
+        db.add(default_category)
+        db.flush()
+
+    return default_category.id
+
 
 
 def _load_form_options(db: Session) -> tuple[list[Category], list[Tag]]:
@@ -70,6 +90,7 @@ def new_post_page(request: Request, db: Session = Depends(get_db)):
             "selected_tag_ids": [],
             "categories": categories,
             "tags": tags,
+            "error": None,
         },
     )
 
@@ -80,7 +101,7 @@ def create_post(
     title: str = Form(...),
     summary: str = Form(""),
     content: str = Form(...),
-    category_id: int = Form(...),
+    category_id: str | None = Form(default=None),
     tag_ids: list[int] = Form(default=[]),
     db: Session = Depends(get_db),
 ):
@@ -92,13 +113,15 @@ def create_post(
     if redirect:
         return redirect
 
+    resolved_category_id = _resolve_category_id(db, category_id)
+
     existing_slugs = set(db.execute(select(Post.slug)).scalars().all())
     post = build_post(
         PostCreate(
             title=title,
             summary=summary or None,
             content=content,
-            category_id=category_id,
+            category_id=resolved_category_id,
             tag_ids=tag_ids,
         ),
         existing_slugs=existing_slugs,
@@ -108,6 +131,44 @@ def create_post(
         post.tags = tags
 
     db.add(post)
+    db.commit()
+    return RedirectResponse(url="/admin/posts", status_code=302)
+
+
+@router.post("/{post_id}/publish")
+def publish_post_route(post_id: int, request: Request, db: Session = Depends(get_db)):
+    init_redirect = _require_initialized(db)
+    if init_redirect:
+        return init_redirect
+
+    redirect = _require_login(request)
+    if redirect:
+        return redirect
+
+    post = db.get(Post, post_id)
+    if not post:
+        raise HTTPException(status_code=404)
+
+    publish_post(post)
+    db.commit()
+    return RedirectResponse(url="/admin/posts", status_code=302)
+
+
+@router.post("/{post_id}/unpublish")
+def unpublish_post_route(post_id: int, request: Request, db: Session = Depends(get_db)):
+    init_redirect = _require_initialized(db)
+    if init_redirect:
+        return init_redirect
+
+    redirect = _require_login(request)
+    if redirect:
+        return redirect
+
+    post = db.get(Post, post_id)
+    if not post:
+        raise HTTPException(status_code=404)
+
+    unpublish_post(post)
     db.commit()
     return RedirectResponse(url="/admin/posts", status_code=302)
 

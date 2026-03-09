@@ -1,3 +1,50 @@
 body {
   background: #f3f4f6;
+  margin: 0;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+
+form {
+  max-width: 840px;
+  margin: 20px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+}
+
+label,
+fieldset {
+  display: block;
+  margin-bottom: 12px;
+}
+
+input[type="text"],
+textarea,
+select {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 6px;
+  padding: 8px;
+  min-height: 40px;
+}
+
+textarea {
+  min-height: 120px;
+}
+
+fieldset label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 12px;
+}
+
+button {
+  min-width: 120px;
+  height: 40px;
+}
+
+.inline-form {
+  display: inline-block;
+  margin-left: 8px;
 }

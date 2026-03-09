@@ -8,6 +8,7 @@
   <body>
     <h1>文章管理</h1>
     <p><a href="/admin/posts/new">新建文章</a></p>
+    <p><a href="/admin/taxonomy">分类与标签</a></p>
     {% if posts %}
     <ul>
       {% for post in posts %}
@@ -15,7 +16,17 @@
         <strong>{{ post.title }}</strong>
         <span>{{ post.slug }}</span>
         <span>{{ post.category.name }}</span>
+        <span>{% if post.published_at %}已发布{% else %}草稿{% endif %}</span>
         <a href="/admin/posts/{{ post.id }}/edit">编辑</a>
+        {% if post.published_at %}
+        <form method="post" action="/admin/posts/{{ post.id }}/unpublish" class="inline-form">
+          <button type="submit">转为草稿</button>
+        </form>
+        {% else %}
+        <form method="post" action="/admin/posts/{{ post.id }}/publish" class="inline-form">
+          <button type="submit">发布</button>
+        </form>
+        {% endif %}
       </li>
       {% endfor %}
     </ul>

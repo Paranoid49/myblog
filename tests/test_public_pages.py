@@ -34,14 +34,22 @@ def test_homepage_returns_html(client, initialized_site) -> None:
     assert "text/html" in response.headers["content-type"]
 
 
-def test_homepage_lists_posts(client, initialized_site, admin_user, seeded_post) -> None:
+def test_homepage_lists_posts(client, initialized_site, admin_user, seeded_post, db_session) -> None:
+    seeded_post.published_at = seeded_post.created_at
+    db_session.commit()
+
     response = client.get("/")
     assert response.status_code == 200
     assert "My First Post" in response.text
 
 
-def test_homepage_handles_empty_posts(client, initialized_site, admin_user) -> None:
+def test_homepage_hides_draft_posts(client, initialized_site, admin_user, seeded_post, db_session) -> None:
+    seeded_post.published_at = None
+    db_session.commit()
+
     response = client.get("/")
+    assert response.status_code == 200
+    assert "My First Post" not in response.text
     assert "暂无文章" in response.text
 
 

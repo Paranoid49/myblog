@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timezone
 
 from pypinyin import Style, lazy_pinyin
 from sqlalchemy import select
@@ -67,8 +68,18 @@ def update_post(post: Post, data: PostCreate, tags: list[Tag]) -> Post:
     return post
 
 
+def publish_post(post: Post) -> Post:
+    post.published_at = datetime.now(timezone.utc)
+    return post
+
+
+def unpublish_post(post: Post) -> Post:
+    post.published_at = None
+    return post
+
+
 def list_published_posts(db: Session) -> list[Post]:
-    stmt = select(Post).order_by(Post.created_at.desc())
+    stmt = select(Post).where(Post.published_at.is_not(None)).order_by(Post.published_at.desc())
     return list(db.execute(stmt).scalars().all())
 
 
