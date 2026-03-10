@@ -11,6 +11,9 @@ class SetupAlreadyInitializedError(Exception):
 
 REQUIRED_TABLES = {"users", "site_settings"}
 
+# 内存缓存：初始化完成后设为 True，避免重复查询数据库
+_initialized_cache: bool | None = None
+
 
 def _has_required_tables(db: Session) -> bool:
     inspector = inspect(db.bind)
@@ -18,12 +21,27 @@ def _has_required_tables(db: Session) -> bool:
 
 
 def is_initialized(db: Session) -> bool:
+    global _initialized_cache
+    if _initialized_cache is True:
+        return True
+
     if not _has_required_tables(db):
         return False
 
     has_site_settings = db.execute(select(SiteSettings.id).limit(1)).first() is not None
     has_admin = db.execute(select(User.id).limit(1)).first() is not None
-    return has_site_settings and has_admin
+    result = has_site_settings and has_admin
+
+    if result:
+        _initialized_cache = True
+
+    return result
+
+
+def clear_initialized_cache() -> None:
+    """清除初始化状态缓存（用于测试或数据库重置）"""
+    global _initialized_cache
+    _initialized_cache = None
 
 
 def get_site_settings(db: Session) -> SiteSettings | None:
@@ -33,6 +51,8 @@ def get_site_settings(db: Session) -> SiteSettings | None:
 
 
 def initialize_site(db: Session, blog_title: str, username: str, password: str) -> User:
+    global _initialized_cache
+
     if is_initialized(db):
         raise SetupAlreadyInitializedError()
 
@@ -42,4 +62,8 @@ def initialize_site(db: Session, blog_title: str, username: str, password: str) 
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # 初始化完成，设置缓存
+    _initialized_cache = True
+
     return user

@@ -2,19 +2,18 @@ from unittest.mock import patch
 
 
 def test_minimal_flow_setup_login_create_publish_and_home_visible(client, db_session) -> None:
-    with patch("app.routes.setup.upgrade_database"):
-        login_setup = client.post(
-            "/setup",
-            data={
+    with patch("app.routes.api_v1_setup.upgrade_database"):
+        setup_resp = client.post(
+            "/api/v1/setup",
+            json={
                 "blog_title": "我的博客",
                 "username": "admin",
                 "password": "secret123",
                 "confirm_password": "secret123",
             },
-            follow_redirects=False,
         )
-    assert login_setup.status_code in (302, 303)
-    assert login_setup.headers["location"] == "/admin/posts"
+    assert setup_resp.status_code == 200
+    assert setup_resp.json()["code"] == 0
 
     taxonomy_response = client.post("/api/v1/admin/categories", json={"name": "Python"})
     assert taxonomy_response.status_code == 201

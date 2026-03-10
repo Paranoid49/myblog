@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import SetupPage from './setup/pages/SetupPage';
 import LoginPage from './admin/pages/LoginPage';
 import AdminHomePage from './admin/pages/AdminHomePage';
 import AdminPostsPage from './admin/pages/AdminPostsPage';
@@ -12,6 +13,7 @@ import PublicAuthorPage from './public/pages/PublicAuthorPage';
 export default function App() {
   return (
     <Routes>
+      <Route path="/setup" element={<SetupPage />} />
       <Route path="/" element={<PublicHomePage />} />
       <Route path="/posts/:slug" element={<PublicPostDetailPage />} />
       <Route path="/author" element={<PublicAuthorPage />} />

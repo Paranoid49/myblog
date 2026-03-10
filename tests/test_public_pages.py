@@ -1,13 +1,10 @@
 from pathlib import Path
 
-from unittest.mock import patch
 
-
-def test_home_redirects_to_setup_when_target_database_does_not_exist(client) -> None:
-    with patch("app.main.frontend_app", side_effect=AssertionError("frontend should not render")):
-        with patch("app.routes.setup.database_exists", return_value=False):
-            response = client.get("/setup")
+def test_setup_page_is_served_by_spa(client) -> None:
+    response = client.get("/setup")
     assert response.status_code == 200
+    assert '<div id="root"></div>' in response.text
 
 
 def test_homepage_returns_frontend_index_when_initialized(client, db_session) -> None:

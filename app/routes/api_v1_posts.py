@@ -21,7 +21,6 @@ from app.services.post_service import (
     unpublish_post,
     update_post,
 )
-from app.services.setup_service import is_initialized
 
 router = APIRouter(prefix="/api/v1", tags=["api-v1-posts"])
 
@@ -98,12 +97,6 @@ def _error(message: str, status_code: int, code: int) -> JSONResponse:
     return JSONResponse(status_code=status_code, content={"code": code, "message": message, "data": None})
 
 
-def _require_initialized(db: Session) -> JSONResponse | None:
-    if not is_initialized(db):
-        return _error("site_not_initialized", status.HTTP_409_CONFLICT, 1001)
-    return None
-
-
 def _require_login(request: Request) -> JSONResponse | None:
     if not request.session.get("user_id"):
         return _error("unauthorized", status.HTTP_401_UNAUTHORIZED, 1002)
@@ -163,20 +156,12 @@ def _extract_title(markdown: str) -> str:
 
 @router.get("/posts", response_model=ApiResponse)
 def list_posts_api(db: Session = Depends(get_db)) -> JSONResponse:
-    init_error = _require_initialized(db)
-    if init_error:
-        return init_error
-
     posts = list_published_posts(db)
     return _ok([_serialize_post(post) for post in posts])
 
 
 @router.get("/posts/{slug}", response_model=ApiResponse)
 def get_post_detail_api(slug: str, db: Session = Depends(get_db)) -> JSONResponse:
-    init_error = _require_initialized(db)
-    if init_error:
-        return init_error
-
     post = get_post_by_slug(db, slug)
     if not post or not post.published_at:
         return _error("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
@@ -191,10 +176,6 @@ def list_admin_posts_api(
     tag_id: int | None = None,
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    init_error = _require_initialized(db)
-    if init_error:
-        return init_error
-
     auth_error = _require_login(request)
     if auth_error:
         return auth_error
@@ -211,10 +192,6 @@ def list_admin_posts_api(
 
 @router.post("/admin/posts", response_model=ApiResponse)
 def create_admin_post_api(payload: AdminPostCreateRequest, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    init_error = _require_initialized(db)
-    if init_error:
-        return init_error
-
     auth_error = _require_login(request)
     if auth_error:
         return auth_error
@@ -244,10 +221,6 @@ def create_admin_post_api(payload: AdminPostCreateRequest, request: Request, db:
 
 @router.post("/admin/posts/import-markdown", response_model=ApiResponse)
 def import_markdown_post_api(payload: ImportMarkdownRequest, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    init_error = _require_initialized(db)
-    if init_error:
-        return init_error
-
     auth_error = _require_login(request)
     if auth_error:
         return auth_error
@@ -278,10 +251,6 @@ def import_markdown_post_api(payload: ImportMarkdownRequest, request: Request, d
 
 @router.post("/admin/posts/{post_id}", response_model=ApiResponse)
 def update_admin_post_api(post_id: int, payload: AdminPostUpdateRequest, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    init_error = _require_initialized(db)
-    if init_error:
-        return init_error
-
     auth_error = _require_login(request)
     if auth_error:
         return auth_error
@@ -315,10 +284,6 @@ def update_admin_post_api(post_id: int, payload: AdminPostUpdateRequest, request
 
 @router.get("/admin/posts/{post_id}/export-markdown", response_model=ApiResponse)
 def export_markdown_post_api(post_id: int, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    init_error = _require_initialized(db)
-    if init_error:
-        return init_error
-
     auth_error = _require_login(request)
     if auth_error:
         return auth_error
@@ -333,10 +298,6 @@ def export_markdown_post_api(post_id: int, request: Request, db: Session = Depen
 
 @router.post("/admin/media/images", response_model=ApiResponse)
 async def upload_image_api(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)) -> JSONResponse:
-    init_error = _require_initialized(db)
-    if init_error:
-        return init_error
-
     auth_error = _require_login(request)
     if auth_error:
         return auth_error
@@ -376,10 +337,6 @@ async def upload_image_api(request: Request, file: UploadFile = File(...), db: S
 
 @router.post("/admin/posts/{post_id}/publish", response_model=ApiResponse)
 def publish_post_api(post_id: int, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    init_error = _require_initialized(db)
-    if init_error:
-        return init_error
-
     auth_error = _require_login(request)
     if auth_error:
         return auth_error
@@ -397,10 +354,6 @@ def publish_post_api(post_id: int, request: Request, db: Session = Depends(get_d
 
 @router.post("/admin/posts/{post_id}/unpublish", response_model=ApiResponse)
 def unpublish_post_api(post_id: int, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    init_error = _require_initialized(db)
-    if init_error:
-        return init_error
-
     auth_error = _require_login(request)
     if auth_error:
         return auth_error
@@ -418,10 +371,6 @@ def unpublish_post_api(post_id: int, request: Request, db: Session = Depends(get
 
 @router.get("/taxonomy", response_model=ApiResponse)
 def list_taxonomy_api(request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    init_error = _require_initialized(db)
-    if init_error:
-        return init_error
-
     auth_error = _require_login(request)
     if auth_error:
         return auth_error
@@ -438,10 +387,6 @@ def list_taxonomy_api(request: Request, db: Session = Depends(get_db)) -> JSONRe
 
 @router.post("/admin/categories", response_model=ApiResponse)
 def create_category_api(payload: NameCreateRequest, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    init_error = _require_initialized(db)
-    if init_error:
-        return init_error
-
     auth_error = _require_login(request)
     if auth_error:
         return auth_error
@@ -461,10 +406,6 @@ def create_category_api(payload: NameCreateRequest, request: Request, db: Sessio
 
 @router.post("/admin/tags", response_model=ApiResponse)
 def create_tag_api(payload: NameCreateRequest, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    init_error = _require_initialized(db)
-    if init_error:
-        return init_error
-
     auth_error = _require_login(request)
     if auth_error:
         return auth_error

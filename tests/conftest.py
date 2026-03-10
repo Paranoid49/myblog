@@ -14,6 +14,7 @@ from app.core.db import Base, get_db
 from app.main import app as fastapi_app
 from app.models import Category, Post, SiteSettings, Tag
 from app.services.auth_service import build_admin_user
+from app.services.setup_service import clear_initialized_cache
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(TEST_DATABASE_URL, future=True, connect_args={"check_same_thread": False})
@@ -36,6 +37,7 @@ def setup_database() -> Generator[None, None, None]:
 
 @pytest.fixture()
 def db_session(setup_database: None) -> Generator[Session, None, None]:
+    clear_initialized_cache()  # 清除初始化状态缓存
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     session = TestingSessionLocal()
