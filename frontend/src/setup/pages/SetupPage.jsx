@@ -21,7 +21,7 @@ export default function SetupPage() {
           navigate('/', { replace: true });
         }
       } catch (e) {
-        // 忽略错误，允许继续显示 setup 页面
+        // 忽略错误
       } finally {
         setLoading(false);
       }
@@ -56,62 +56,79 @@ export default function SetupPage() {
 
   if (loading) {
     return (
-      <main style={{ maxWidth: 420, margin: '40px auto', padding: 16 }}>
-        <p>正在检查初始化状态...</p>
-      </main>
+      <div className="site-frame" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="notice muted">检查初始化状态...</div>
+      </div>
     );
   }
 
   return (
-    <main style={{ maxWidth: 420, margin: '40px auto', padding: 16, background: 'var(--bg)', borderRadius: 8 }}>
-      <h1>博客初始化</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>首次运行需要初始化站点和管理员账号</p>
-      {error ? <p style={{ color: '#c00' }}>{error}</p> : null}
-      <form onSubmit={onSubmit}>
-        <label style={{ display: 'block', marginBottom: 12 }}>
-          博客标题
-          <input
-            value={blogTitle}
-            onChange={(e) => setBlogTitle(e.target.value)}
-            type="text"
-            required
-            style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
-          />
-        </label>
-        <label style={{ display: 'block', marginBottom: 12 }}>
-          管理员用户名
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            type="text"
-            required
-            style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
-          />
-        </label>
-        <label style={{ display: 'block', marginBottom: 12 }}>
-          密码
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            required
-            style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
-          />
-        </label>
-        <label style={{ display: 'block', marginBottom: 12 }}>
-          确认密码
-          <input
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            type="password"
-            required
-            style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
-          />
-        </label>
-        <button type="submit" disabled={submitting} style={{ width: '100%', padding: 10 }}>
-          {submitting ? '初始化中...' : '初始化'}
-        </button>
-      </form>
-    </main>
+    <div className="site-frame" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="panel-card" style={{ width: '100%', maxWidth: 440, margin: 'var(--space-xl)' }}>
+        <p className="admin-kicker">Setup</p>
+        <h2 style={{ fontFamily: 'var(--font-mono)', marginBottom: 'var(--space-sm)' }}>
+          {'>'} 博客初始化
+        </h2>
+        <p className="muted" style={{ marginBottom: 'var(--space-lg)' }}>
+          首次运行，请设置站点信息和管理员账号。
+        </p>
+
+        {error ? <div className="notice error">{error}</div> : null}
+
+        <form onSubmit={onSubmit} className="stack-form">
+          <div>
+            <label style={{ display: 'block', marginBottom: 'var(--space-xs)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              博客标题
+            </label>
+            <input
+              value={blogTitle}
+              onChange={(e) => setBlogTitle(e.target.value)}
+              type="text"
+              required
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: 'var(--space-xs)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              管理员用户名
+            </label>
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              type="text"
+              required
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: 'var(--space-xs)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              密码
+            </label>
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              required
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: 'var(--space-xs)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              确认密码
+            </label>
+            <input
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              type="password"
+              required
+              style={{ width: '100%' }}
+            />
+          </div>
+          <button type="submit" className="primary-button" disabled={submitting} style={{ marginTop: 'var(--space-md)' }}>
+            {submitting ? '初始化中...' : '初始化'}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }

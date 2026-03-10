@@ -1,24 +1,43 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../shared/layout/AdminLayout';
 
 export default function AdminHomePage() {
   const navigate = useNavigate();
 
   return (
-    <AdminLayout title="后台概览" description="集中管理文章、分类标签与作者资料。" navigate={navigate}>
+    <AdminLayout title="概览" description="集中管理文章、分类标签与作者资料。" navigate={navigate}>
       <section className="dashboard-grid">
         <article className="panel-card">
           <h3>写作工作区</h3>
-          <p className="muted">进入文章管理页，完成新建、编辑、导入导出和发布操作。</p>
+          <p className="muted">新建、编辑、导入导出和发布文章。</p>
+          <Link to="/admin/posts" className="nav-link" style={{ marginTop: 'var(--space-md)', display: 'inline-block' }}>
+            进入 →
+          </Link>
         </article>
         <article className="panel-card">
           <h3>内容组织</h3>
-          <p className="muted">通过分类与标签维护文章结构，保持首页与详情页展示整洁。</p>
+          <p className="muted">管理分类与标签，保持内容结构清晰。</p>
+          <Link to="/admin/taxonomy" className="nav-link" style={{ marginTop: 'var(--space-md)', display: 'inline-block' }}>
+            进入 →
+          </Link>
         </article>
         <article className="panel-card">
           <h3>作者资料</h3>
-          <p className="muted">补齐昵称、简介和邮箱，让作者页更像真实博客主页。</p>
+          <p className="muted">编辑昵称、简介和邮箱，展示个人信息。</p>
+          <Link to="/admin/author" className="nav-link" style={{ marginTop: 'var(--space-md)', display: 'inline-block' }}>
+            进入 →
+          </Link>
         </article>
+      </section>
+
+      <section style={{ marginTop: 'var(--space-xl)' }}>
+        <div className="panel-card">
+          <h3>快捷操作</h3>
+          <div className="toolbar-row" style={{ marginTop: 'var(--space-md)' }}>
+            <Link to="/admin/posts?mode=edit" className="primary-button">新建文章</Link>
+            <Link to="/" className="ghost-button">查看站点</Link>
+          </div>
+        </div>
       </section>
     </AdminLayout>
   );

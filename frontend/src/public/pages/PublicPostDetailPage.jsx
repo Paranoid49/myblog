@@ -6,7 +6,8 @@ import MarkdownRenderer from '../../shared/markdown/MarkdownRenderer';
 
 function formatDate(value) {
   if (!value) return '未发布';
-  return new Date(value).toLocaleString('zh-CN', { hour12: false });
+  const date = new Date(value);
+  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 
 export default function PublicPostDetailPage() {
@@ -22,20 +23,29 @@ export default function PublicPostDetailPage() {
   }, [slug]);
 
   return (
-    <PublicLayout title={post?.title || '文章详情'} description={post?.summary || '阅读完整正文内容。'}>
-      <p>
-        <Link to="/">← 返回首页</Link>
+    <PublicLayout title={post?.title || '文章详情'} description={post?.summary || ''}>
+      <p style={{ marginBottom: 'var(--space-lg)' }}>
+        <Link to="/" className="nav-link">← 返回首页</Link>
       </p>
-      {error ? <div className="notice error">加载失败：{error}</div> : null}
+
+      {error ? <div className="notice error">{error}</div> : null}
       {!post ? <div className="notice muted">加载中...</div> : null}
+
       {post ? (
         <article className="post-detail-card">
-          <div className="post-meta-row muted">
-            <span>发布时间：{formatDate(post.published_at)}</span>
-            <span>分类：{post.category_name || '未分类'}</span>
+          <h1>{post.title}</h1>
+          <div className="post-meta-detail">
+            <span>
+              <span className="label">发布于</span>
+              <span className="value">{formatDate(post.published_at)}</span>
+            </span>
+            <span>
+              <span className="label">分类</span>
+              <span className="value">{post.category_name || '未分类'}</span>
+            </span>
           </div>
           {(post.tags || []).length ? (
-            <div className="post-tag-list">
+            <div className="post-tag-list" style={{ marginBottom: 'var(--space-lg)' }}>
               {post.tags.map((tag) => (
                 <span key={tag.id} className="tag-chip">#{tag.name}</span>
               ))}

@@ -5,7 +5,8 @@ import PublicLayout from '../../shared/layout/PublicLayout';
 
 function formatDate(value) {
   if (!value) return '未发布';
-  return new Date(value).toLocaleString('zh-CN', { hour12: false });
+  const date = new Date(value);
+  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 
 export default function PublicHomePage() {
@@ -21,24 +22,30 @@ export default function PublicHomePage() {
   }, []);
 
   return (
-    <PublicLayout title="文章首页" description="记录技术实践、构建过程与独立博客系统思考。">
-      {error ? <div className="notice error">加载失败：{error}</div> : null}
-      {!loaded ? <div className="notice muted">正在加载文章列表...</div> : null}
-      {loaded && !posts.length ? <div className="notice muted">暂无已发布文章，先去后台写一篇吧。</div> : null}
+    <PublicLayout title="首页" description="记录技术实践、代码思考与系统构建。">
+      {error ? <div className="notice error">{error}</div> : null}
+      {!loaded ? (
+        <div className="notice muted">加载中...</div>
+      ) : null}
+      {loaded && !posts.length ? (
+        <div className="notice muted">暂无已发布文章，请先登录后台发布内容。</div>
+      ) : null}
 
       <section className="post-list-grid">
         {posts.map((post) => (
           <article key={post.id} className="post-card">
-            <div className="post-meta-row muted">
-              <span>{formatDate(post.published_at)}</span>
+            <div className="post-meta-row">
+              <time>{formatDate(post.published_at)}</time>
               <span>{post.category_name || '未分类'}</span>
             </div>
             <h2 className="post-card-title">
               <Link to={`/posts/${post.slug}`}>{post.title}</Link>
             </h2>
-            <p className="post-card-summary">{post.summary || '暂无摘要，点击进入查看完整正文。'}</p>
+            <p className="post-card-summary">{post.summary || '点击查看完整内容。'}</p>
             <div className="post-tag-list">
-              {(post.tags || []).length ? post.tags.map((tag) => <span key={tag.id} className="tag-chip">#{tag.name}</span>) : <span className="muted">无标签</span>}
+              {(post.tags || []).map((tag) => (
+                <span key={tag.id} className="tag-chip">#{tag.name}</span>
+              ))}
             </div>
           </article>
         ))}
