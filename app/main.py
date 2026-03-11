@@ -70,6 +70,8 @@ async def check_initialized_middleware(request: Request, call_next):
 @app.get("/", include_in_schema=False)
 @app.get("/setup", include_in_schema=False)
 @app.get("/posts/{path:path}", include_in_schema=False)
+@app.get("/categories/{path:path}", include_in_schema=False)
+@app.get("/tags/{path:path}", include_in_schema=False)
 @app.get("/author", include_in_schema=False)
 @app.get("/admin", include_in_schema=False)
 @app.get("/admin/{path:path}", include_in_schema=False)

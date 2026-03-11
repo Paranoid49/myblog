@@ -46,27 +46,49 @@
 - 成功：200
 - 返回 data：`null`
 
-## 4. 前台内容接口（Public/Posts）
+## 4. 作者资料接口（Public/Author）
 
-### 4.1 GET `/api/v1/posts`
+### 4.1 GET `/api/v1/author`
+- 说明：返回站点作者公开资料
+- 成功：200
+- 失败：409（`1001`）
+- 返回 data：`AuthorProfile`
+
+### 4.2 POST `/api/v1/author`
+
+> 需要登录（session）
+
+- 入参（JSON）：
+  - `name: string`
+  - `bio: string`
+  - `email: string`
+  - `avatar: string`
+  - `link: string`
+- 成功：200
+- 失败：401（`1002`）、409（`1001`）
+- 说明：新增字段遵循向后兼容，`avatar` 与 `link` 可为空字符串
+
+## 5. 前台内容接口（Public/Posts）
+
+### 5.1 GET `/api/v1/posts`
 - 说明：返回已发布文章列表
 - 成功：200
 - 返回 data：`Post[]`
 
-### 4.2 GET `/api/v1/posts/{slug}`
+### 5.2 GET `/api/v1/posts/{slug}`
 - 说明：返回单篇已发布文章详情
 - 成功：200
 - 失败：404（`1404`）
 
-## 5. 后台文章接口（Admin/Posts）
+## 6. 后台文章接口（Admin/Posts）
 
 > 需要登录（session）
 
-### 5.1 GET `/api/v1/admin/posts`
+### 6.1 GET `/api/v1/admin/posts`
 - 说明：返回后台文章列表（包含草稿与已发布）
 - 成功：200
 
-### 5.2 POST `/api/v1/admin/posts`
+### 6.2 POST `/api/v1/admin/posts`
 - 入参（JSON）：
   - `title: string`
   - `summary: string | null`
@@ -76,19 +98,19 @@
 - 成功：201
 - 说明：`category_id` 为空时走默认分类策略
 
-### 5.3 POST `/api/v1/admin/posts/{post_id}/publish`
+### 6.3 POST `/api/v1/admin/posts/{post_id}/publish`
 - 成功：200
 - 失败：404（`1404`）
 
-### 5.4 POST `/api/v1/admin/posts/{post_id}/unpublish`
+### 6.4 POST `/api/v1/admin/posts/{post_id}/unpublish`
 - 成功：200
 - 失败：404（`1404`）
 
-## 6. 后台分类标签接口（Admin/Taxonomy）
+## 7. 后台分类标签接口（Admin/Taxonomy）
 
 > 需要登录（session）
 
-### 6.1 GET `/api/v1/taxonomy`
+### 7.1 GET `/api/v1/taxonomy`
 - 成功：200
 - 返回 data：
 
@@ -99,19 +121,31 @@
 }
 ```
 
-### 6.2 POST `/api/v1/admin/categories`
+### 7.2 POST `/api/v1/admin/categories`
 - 入参（JSON）：`{ "name": "数据库" }`
 - 成功：201
 - 失败：409（`1409`）
 
-### 6.3 POST `/api/v1/admin/tags`
+### 7.3 POST `/api/v1/admin/tags`
 - 入参（JSON）：`{ "name": "后端" }`
 - 成功：201
 - 失败：409（`1410`）
 
-## 7. 数据模型（API 返回最小字段）
+## 8. 数据模型（API 返回最小字段）
 
-### 7.1 Post
+### 8.1 AuthorProfile
+
+```json
+{
+  "name": "admin",
+  "bio": "这是作者简介",
+  "email": "admin@example.com",
+  "avatar": "https://example.com/avatar.png",
+  "link": "https://example.com/about"
+}
+```
+
+### 8.2 Post
 
 ```json
 {
@@ -126,19 +160,19 @@
 }
 ```
 
-### 7.2 Category/Tag
+### 8.3 Category/Tag
 
 ```json
 { "id": 1, "name": "Python", "slug": "python" }
 ```
 
-## 8. 管理端与前台边界
+## 9. 管理端与前台边界
 
-- 前台仅使用：`/posts`、`/posts/{slug}`
-- 管理端仅使用：`/auth/*`、`/admin/posts*`、`/taxonomy`、`/admin/categories`、`/admin/tags`
+- 前台仅使用：`/posts`、`/posts/{slug}`、`/author`
+- 管理端仅使用：`/auth/*`、`/author`（写）、`/admin/posts*`、`/taxonomy`、`/admin/categories`、`/admin/tags`
 - 前台不直接调用后台写接口
 
-## 9. 兼容策略（V1）
+## 10. 兼容策略（V1）
 
 - 保持响应结构稳定（`code/message/data`）
 - 新增字段遵循向后兼容（只增不删）

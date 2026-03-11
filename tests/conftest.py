@@ -65,6 +65,8 @@ def initialized_site(db_session: Session) -> SiteSettings:
         author_name="admin",
         author_bio="",
         author_email="",
+        author_avatar="",
+        author_link="",
     )
     db_session.add(settings)
     db_session.commit()

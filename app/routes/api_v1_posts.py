@@ -12,6 +12,7 @@ from app.core.db import get_db
 from app.core.hook_bus import hook_bus
 from app.models import Category, Post, Tag
 from app.schemas.post import PostCreate
+from app.services.taxonomy_service import get_category_by_slug, get_tag_by_slug
 from app.services.post_service import (
     build_post,
     get_post_by_slug,
@@ -26,7 +27,7 @@ router = APIRouter(prefix="/api/v1", tags=["api-v1-posts"])
 
 UPLOAD_DIR = Path(__file__).resolve().parents[1] / "static" / "uploads"
 MAX_IMAGE_SIZE = 5 * 1024 * 1024
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
 
 class AdminPostCreateRequest(BaseModel):
@@ -128,6 +129,7 @@ def _serialize_post(post: Post) -> dict:
         "content": post.content,
         "category_id": post.category_id,
         "category_name": post.category.name if post.category else None,
+        "category_slug": post.category.slug if post.category else None,
         "tag_ids": [tag.id for tag in post.tags],
         "tags": [{"id": tag.id, "name": tag.name, "slug": tag.slug} for tag in post.tags],
         "published_at": post.published_at.isoformat() if post.published_at else None,
@@ -167,6 +169,38 @@ def get_post_detail_api(slug: str, db: Session = Depends(get_db)) -> JSONRespons
         return _error("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
 
     return _ok(_serialize_post(post))
+
+
+@router.get("/categories/{slug}", response_model=ApiResponse)
+def get_category_posts_api(slug: str, db: Session = Depends(get_db)) -> JSONResponse:
+    category = get_category_by_slug(db, slug)
+    if not category:
+        return _error("category_not_found", status.HTTP_404_NOT_FOUND, 1413)
+
+    posts = [post for post in category.posts if post.published_at]
+    posts.sort(key=lambda post: post.published_at, reverse=True)
+    return _ok(
+        {
+            "category": _serialize_category(category),
+            "posts": [_serialize_post(post) for post in posts],
+        }
+    )
+
+
+@router.get("/tags/{slug}", response_model=ApiResponse)
+def get_tag_posts_api(slug: str, db: Session = Depends(get_db)) -> JSONResponse:
+    tag = get_tag_by_slug(db, slug)
+    if not tag:
+        return _error("tag_not_found", status.HTTP_404_NOT_FOUND, 1414)
+
+    posts = [post for post in tag.posts if post.published_at]
+    posts.sort(key=lambda post: post.published_at, reverse=True)
+    return _ok(
+        {
+            "tag": _serialize_tag(tag),
+            "posts": [_serialize_post(post) for post in posts],
+        }
+    )
 
 
 @router.get("/admin/posts", response_model=ApiResponse)
@@ -314,6 +348,7 @@ async def upload_image_api(request: Request, file: UploadFile = File(...), db: S
         "image/jpeg": ".jpg",
         "image/png": ".png",
         "image/webp": ".webp",
+        "image/gif": ".gif",
     }
     ext = ext_map.get(content_type, ".img")
     filename = f"{slugify(Path(file.filename or 'image').stem)}-{len(content)}{ext}"

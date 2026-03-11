@@ -26,6 +26,7 @@ def test_api_post_detail_success(client, initialized_site, admin_user, seeded_po
     payload = response.json()
     assert payload["code"] == 0
     assert payload["data"]["slug"] == seeded_post.slug
+    assert payload["data"]["category_slug"] == seeded_post.category.slug
 
 
 def test_api_post_detail_returns_404_for_draft(client, initialized_site, admin_user, seeded_post) -> None:
@@ -177,6 +178,32 @@ def test_api_filter_admin_posts_by_category(client, logged_in_admin, seeded_post
     assert len(payload["data"]) >= 1
 
 
+def test_api_get_category_posts_success(client, initialized_site, admin_user, seeded_post, db_session) -> None:
+    seeded_post.published_at = seeded_post.created_at
+    db_session.commit()
+
+    response = client.get(f"/api/v1/categories/{seeded_post.category.slug}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["code"] == 0
+    assert payload["data"]["category"]["slug"] == seeded_post.category.slug
+    assert len(payload["data"]["posts"]) == 1
+
+
+def test_api_get_tag_posts_success(client, initialized_site, admin_user, seeded_post, db_session) -> None:
+    seeded_post.published_at = seeded_post.created_at
+    db_session.commit()
+
+    response = client.get(f"/api/v1/tags/{seeded_post.tags[0].slug}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["code"] == 0
+    assert payload["data"]["tag"]["slug"] == seeded_post.tags[0].slug
+    assert len(payload["data"]["posts"]) == 1
+
+
 def test_api_update_admin_post_success(client, logged_in_admin, seeded_post) -> None:
     response = client.post(
         f"/api/v1/admin/posts/{seeded_post.id}",
@@ -233,6 +260,24 @@ def test_api_upload_image_success(client, logged_in_admin) -> None:
     assert payload["code"] == 0
     assert payload["data"]["content_type"] == "image/png"
     assert payload["data"]["url"].startswith("/static/uploads/")
+
+    from pathlib import Path
+
+    key = payload["data"]["key"]
+    (Path(__file__).resolve().parents[1] / "app" / "static" / "uploads" / key).unlink(missing_ok=True)
+
+
+def test_api_upload_gif_image_success(client, logged_in_admin) -> None:
+    response = client.post(
+        "/api/v1/admin/media/images",
+        files={"file": ("a.gif", b"GIF89a", "image/gif")},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["code"] == 0
+    assert payload["data"]["content_type"] == "image/gif"
+    assert payload["data"]["key"].endswith(".gif")
 
     from pathlib import Path
 

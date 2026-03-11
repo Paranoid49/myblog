@@ -12,5 +12,7 @@ class SiteSettings(Base):
     author_name: Mapped[str] = mapped_column(String(100), default="admin", server_default="admin")
     author_bio: Mapped[str] = mapped_column(Text, default="", server_default="")
     author_email: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    author_avatar: Mapped[str] = mapped_column(String(500), default="", server_default="")
+    author_link: Mapped[str] = mapped_column(String(500), default="", server_default="")
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

@@ -11,7 +11,16 @@ def test_homepage_returns_frontend_index_when_initialized(client, db_session) ->
     from app.models import SiteSettings
     from app.services.auth_service import build_admin_user
 
-    db_session.add(SiteSettings(blog_title="调试标题-123", author_name="admin", author_bio="", author_email=""))
+    db_session.add(
+        SiteSettings(
+            blog_title="调试标题-123",
+            author_name="admin",
+            author_bio="",
+            author_email="",
+            author_avatar="",
+            author_link="",
+        )
+    )
     db_session.add(build_admin_user("admin", "secret123"))
     db_session.commit()
 
@@ -23,6 +32,18 @@ def test_homepage_returns_frontend_index_when_initialized(client, db_session) ->
 
 def test_post_detail_uses_frontend_index(client, initialized_site, admin_user, seeded_post) -> None:
     response = client.get("/posts/my-first-post")
+    assert response.status_code == 200
+    assert '<div id="root"></div>' in response.text
+
+
+def test_category_page_uses_frontend_index(client, initialized_site, admin_user) -> None:
+    response = client.get("/categories/python")
+    assert response.status_code == 200
+    assert '<div id="root"></div>' in response.text
+
+
+def test_tag_page_uses_frontend_index(client, initialized_site, admin_user) -> None:
+    response = client.get("/tags/fastapi")
     assert response.status_code == 200
     assert '<div id="root"></div>' in response.text
 
