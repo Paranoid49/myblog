@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
-
-from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
@@ -13,22 +11,16 @@ from app.core.deps import get_current_admin
 from app.core.hook_bus import hook_bus
 from app.models import Category, Post, Tag, User
 from app.schemas.post import PostCreate
-from app.services.taxonomy_service import get_category_by_slug, get_tag_by_slug, list_taxonomy
 from app.services.post_service import (
     build_post,
     get_post_by_slug,
     list_published_posts,
     publish_post,
-    slugify,
     unpublish_post,
     update_post,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["api-v1-posts"])
-
-UPLOAD_DIR = Path(__file__).resolve().parents[1] / "static" / "uploads"
-MAX_IMAGE_SIZE = 5 * 1024 * 1024
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
 
 class AdminPostCreateRequest(BaseModel):
@@ -54,17 +46,6 @@ class AdminPostUpdateRequest(BaseModel):
     tag_ids: list[int] = Field(default_factory=list)
 
     @field_validator("title", "content")
-    @classmethod
-    def _must_not_be_blank(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("must_not_be_blank")
-        return value
-
-
-class NameCreateRequest(BaseModel):
-    name: str
-
-    @field_validator("name")
     @classmethod
     def _must_not_be_blank(cls, value: str) -> str:
         if not value.strip():
@@ -131,14 +112,6 @@ def _serialize_post(post: Post) -> dict:
     }
 
 
-def _serialize_category(category: Category) -> dict:
-    return {"id": category.id, "name": category.name, "slug": category.slug}
-
-
-def _serialize_tag(tag: Tag) -> dict:
-    return {"id": tag.id, "name": tag.name, "slug": tag.slug}
-
-
 def _extract_title(markdown: str) -> str:
     for line in markdown.splitlines():
         stripped = line.strip()
@@ -164,38 +137,6 @@ def get_post_detail_api(slug: str, db: Session = Depends(get_db)) -> JSONRespons
         return _error("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
 
     return _ok(_serialize_post(post))
-
-
-@router.get("/categories/{slug}", response_model=ApiResponse)
-def get_category_posts_api(slug: str, db: Session = Depends(get_db)) -> JSONResponse:
-    category = get_category_by_slug(db, slug)
-    if not category:
-        return _error("category_not_found", status.HTTP_404_NOT_FOUND, 1413)
-
-    posts = [post for post in category.posts if post.published_at]
-    posts.sort(key=lambda post: post.published_at, reverse=True)
-    return _ok(
-        {
-            "category": _serialize_category(category),
-            "posts": [_serialize_post(post) for post in posts],
-        }
-    )
-
-
-@router.get("/tags/{slug}", response_model=ApiResponse)
-def get_tag_posts_api(slug: str, db: Session = Depends(get_db)) -> JSONResponse:
-    tag = get_tag_by_slug(db, slug)
-    if not tag:
-        return _error("tag_not_found", status.HTTP_404_NOT_FOUND, 1414)
-
-    posts = [post for post in tag.posts if post.published_at]
-    posts.sort(key=lambda post: post.published_at, reverse=True)
-    return _ok(
-        {
-            "tag": _serialize_tag(tag),
-            "posts": [_serialize_post(post) for post in posts],
-        }
-    )
 
 
 @router.get("/admin/posts", response_model=ApiResponse)
@@ -322,46 +263,6 @@ def export_markdown_post_api(
     return _ok({"filename": f"{post.slug}.md", "markdown": markdown})
 
 
-@router.post("/admin/media/images", response_model=ApiResponse)
-async def upload_image_api(
-    file: UploadFile = File(...),
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db),
-) -> JSONResponse:
-    content_type = file.content_type or ""
-    if content_type not in ALLOWED_IMAGE_TYPES:
-        return _error("unsupported_image_type", status.HTTP_400_BAD_REQUEST, 1411)
-
-    content = await file.read()
-    if len(content) > MAX_IMAGE_SIZE:
-        return _error("image_too_large", status.HTTP_400_BAD_REQUEST, 1412)
-
-    ext_map = {
-        "image/jpeg": ".jpg",
-        "image/png": ".png",
-        "image/webp": ".webp",
-        "image/gif": ".gif",
-    }
-    ext = ext_map.get(content_type, ".img")
-    filename = f"{slugify(Path(file.filename or 'image').stem)}-{len(content)}{ext}"
-
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    save_path = UPLOAD_DIR / filename
-    save_path.write_bytes(content)
-
-    url = f"/static/uploads/{filename}"
-    hook_bus.emit("media.image_uploaded", {"key": filename, "url": url, "content_type": content_type})
-    return _ok(
-        {
-            "url": url,
-            "key": filename,
-            "size": len(content),
-            "content_type": content_type,
-        },
-        status_code=status.HTTP_201_CREATED,
-    )
-
-
 @router.post("/admin/posts/{post_id}/publish", response_model=ApiResponse)
 def publish_post_api(
     post_id: int,
@@ -394,52 +295,3 @@ def unpublish_post_api(
     db.refresh(post)
     hook_bus.emit("post.unpublished", {"post_id": post.id, "slug": post.slug})
     return _ok(_serialize_post(post))
-
-
-@router.get("/taxonomy", response_model=ApiResponse)
-def list_taxonomy_api(current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)) -> JSONResponse:
-    categories, tags = list_taxonomy(db)
-    return _ok(
-        {
-            "categories": [_serialize_category(category) for category in categories],
-            "tags": [_serialize_tag(tag) for tag in tags],
-        }
-    )
-
-
-@router.post("/admin/categories", response_model=ApiResponse)
-def create_category_api(
-    payload: NameCreateRequest,
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db),
-) -> JSONResponse:
-    normalized_name = payload.name.strip()
-    category_slug = slugify(normalized_name)
-    exists = db.execute(select(Category.id).where(Category.slug == category_slug)).first() is not None
-    if exists:
-        return _error("category_exists", status.HTTP_409_CONFLICT, 1409)
-
-    category = Category(name=normalized_name, slug=category_slug)
-    db.add(category)
-    db.commit()
-    db.refresh(category)
-    return _ok(_serialize_category(category), status_code=status.HTTP_201_CREATED)
-
-
-@router.post("/admin/tags", response_model=ApiResponse)
-def create_tag_api(
-    payload: NameCreateRequest,
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db),
-) -> JSONResponse:
-    normalized_name = payload.name.strip()
-    tag_slug = slugify(normalized_name)
-    exists = db.execute(select(Tag.id).where(Tag.slug == tag_slug)).first() is not None
-    if exists:
-        return _error("tag_exists", status.HTTP_409_CONFLICT, 1410)
-
-    tag = Tag(name=normalized_name, slug=tag_slug)
-    db.add(tag)
-    db.commit()
-    db.refresh(tag)
-    return _ok(_serialize_tag(tag), status_code=status.HTTP_201_CREATED)

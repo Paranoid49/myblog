@@ -1,3 +1,6 @@
+from datetime import datetime
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -5,6 +8,8 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.services.auth_service import authenticate_user
 from app.services.setup_service import is_initialized
+
+DEBUG_LOG = Path(__file__).resolve().parents[2] / "project_logs" / "manual_checks" / "auth_login_debug.log"
 
 router = APIRouter(prefix="/api/v1/auth", tags=["api-v1-auth"])
 
@@ -24,6 +29,24 @@ def api_login(
     password: str = Form(...),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
+    DEBUG_LOG.parent.mkdir(parents=True, exist_ok=True)
+    with DEBUG_LOG.open("a", encoding="utf-8") as f:
+        f.write(
+            "\n".join(
+                [
+                    f"ts={datetime.now().isoformat()}",
+                    f"content_type={request.headers.get('content-type')}",
+                    f"origin={request.headers.get('origin')}",
+                    f"referer={request.headers.get('referer')}",
+                    f"host={request.headers.get('host')}",
+                    f"username={username}",
+                    f"password_length={len(password)}",
+                    "---",
+                ]
+            )
+            + "\n"
+        )
+
     if not is_initialized(db):
         return _error("site_not_initialized", status.HTTP_409_CONFLICT, 1001)
 

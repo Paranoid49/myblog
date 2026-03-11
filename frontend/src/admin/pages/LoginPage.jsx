@@ -19,12 +19,14 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const form = new FormData();
-      form.set('username', username);
-      form.set('password', password);
+      const formData = new FormData(event.currentTarget);
+      const form = new URLSearchParams();
+      form.set('username', String(formData.get('username') || ''));
+      form.set('password', String(formData.get('password') || ''));
       const data = await apiRequest('/auth/login', {
         method: 'POST',
-        body: form,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: form.toString(),
       });
       setStoredUser(data);
       navigate(redirectTo, { replace: true });
@@ -51,6 +53,7 @@ export default function LoginPage() {
               用户名
             </label>
             <input
+              name="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               type="text"
@@ -63,6 +66,7 @@ export default function LoginPage() {
               密码
             </label>
             <input
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type="password"

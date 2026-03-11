@@ -12,6 +12,8 @@ from app.routes.api_v1_auth import router as api_v1_auth_router
 from app.routes.api_v1_author import router as api_v1_author_router
 from app.routes.api_v1_posts import router as api_v1_posts_router
 from app.routes.api_v1_setup import router as api_v1_setup_router
+from app.routes.api_v1_taxonomy import router as api_v1_taxonomy_router
+from app.routes.api_v1_media import router as api_v1_media_router
 from app.services.setup_service import is_initialized
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -29,6 +31,8 @@ app.include_router(api_v1_setup_router)
 app.include_router(api_v1_auth_router)
 app.include_router(api_v1_author_router)
 app.include_router(api_v1_posts_router)
+app.include_router(api_v1_taxonomy_router)
+app.include_router(api_v1_media_router)
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == 401 and isinstance(exc.detail, dict):

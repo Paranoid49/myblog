@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -12,6 +13,7 @@ from pathlib import Path
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_BACKEND_PORT = 8000
 DEFAULT_FRONTEND_PORT = 5173
+FRONTEND_DEV_ENV_FILE = ".env.development.local"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -45,12 +47,24 @@ def _resolve_npm_command() -> list[str]:
     raise RuntimeError("npm_not_found_in_path")
 
 
-def _start_frontend(project_root: Path, frontend_port: int) -> subprocess.Popen:
+def _write_frontend_dev_env(frontend_dir: Path, backend_port: int) -> Path:
+    env_file = frontend_dir / FRONTEND_DEV_ENV_FILE
+    env_file.write_text(f"VITE_API_TARGET=http://{DEFAULT_HOST}:{backend_port}\n", encoding="utf-8")
+    return env_file
+
+
+def _remove_frontend_dev_env(env_file: Path | None) -> None:
+    if env_file is None:
+        return
+    with suppress(Exception):
+        env_file.unlink(missing_ok=True)
+
+
+def _start_frontend(project_root: Path, frontend_port: int, backend_port: int) -> subprocess.Popen:
+    frontend_dir = project_root / "frontend"
     npm_command = _resolve_npm_command()
     command = [
         *npm_command,
-        "--prefix",
-        str(project_root / "frontend"),
         "run",
         "dev",
         "--",
@@ -59,7 +73,8 @@ def _start_frontend(project_root: Path, frontend_port: int) -> subprocess.Popen:
         "--port",
         str(frontend_port),
     ]
-    return subprocess.Popen(command)
+    env = {**os.environ, "VITE_API_TARGET": f"http://{DEFAULT_HOST}:{backend_port}"}
+    return subprocess.Popen(command, cwd=str(frontend_dir), env=env)
 
 
 def _stop_process(process: subprocess.Popen | None) -> None:
@@ -80,13 +95,15 @@ def main(argv: list[str] | None = None) -> None:
 
     backend_process: subprocess.Popen | None = None
     frontend_process: subprocess.Popen | None = None
+    frontend_env_file: Path | None = None
 
     backend_url = f"http://{DEFAULT_HOST}:{args.backend_port}/"
     frontend_url = f"http://{DEFAULT_HOST}:{args.frontend_port}/admin/login"
 
     try:
+        frontend_env_file = _write_frontend_dev_env(project_root / "frontend", args.backend_port)
         backend_process = _start_backend(project_root, args.backend_port)
-        frontend_process = _start_frontend(project_root, args.frontend_port)
+        frontend_process = _start_frontend(project_root, args.frontend_port, args.backend_port)
 
         print(f"BACKEND_URL={backend_url}")
         print(f"FRONTEND_URL={frontend_url}")
@@ -103,6 +120,7 @@ def main(argv: list[str] | None = None) -> None:
     finally:
         _stop_process(frontend_process)
         _stop_process(backend_process)
+        _remove_frontend_dev_env(frontend_env_file)
 
 
 if __name__ == "__main__":
