@@ -242,7 +242,7 @@ export default function AdminPostsPage() {
               </label>
               <label className="file-action">
                 上传图片
-                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadImage} />
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={uploadImage} />
               </label>
               <button type="submit" className="primary-button">{form.id ? '保存修改' : '创建文章'}</button>
             </div>

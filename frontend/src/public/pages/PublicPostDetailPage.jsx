@@ -41,13 +41,19 @@ export default function PublicPostDetailPage() {
             </span>
             <span>
               <span className="label">分类</span>
-              <span className="value">{post.category_name || '未分类'}</span>
+              <span className="value">
+                {post.category_slug ? (
+                  <Link to={`/categories/${post.category_slug}`} className="nav-link">{post.category_name || '未分类'}</Link>
+                ) : (
+                  post.category_name || '未分类'
+                )}
+              </span>
             </span>
           </div>
           {(post.tags || []).length ? (
             <div className="post-tag-list" style={{ marginBottom: 'var(--space-lg)' }}>
               {post.tags.map((tag) => (
-                <span key={tag.id} className="tag-chip">#{tag.name}</span>
+                <Link key={tag.id} to={`/tags/${tag.slug}`} className="tag-chip">#{tag.name}</Link>
               ))}
             </div>
           ) : null}

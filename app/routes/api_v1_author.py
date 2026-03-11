@@ -19,6 +19,8 @@ class AuthorProfileUpdateRequest(BaseModel):
     name: str
     bio: str
     email: str
+    avatar: str = ""
+    link: str = ""
 
     @field_validator("name")
     @classmethod
@@ -27,7 +29,7 @@ class AuthorProfileUpdateRequest(BaseModel):
             raise ValueError("must_not_be_blank")
         return value.strip()
 
-    @field_validator("bio", "email")
+    @field_validator("bio", "email", "avatar", "link")
     @classmethod
     def _trim_text(cls, value: str) -> str:
         return value.strip()
@@ -52,6 +54,8 @@ def _serialize_author(settings) -> dict:
         "name": settings.author_name,
         "bio": settings.author_bio,
         "email": settings.author_email,
+        "avatar": settings.author_avatar,
+        "link": settings.author_link,
     }
 
 
@@ -77,6 +81,8 @@ def update_author_profile(payload: AuthorProfileUpdateRequest, request: Request,
     settings.author_name = payload.name
     settings.author_bio = payload.bio
     settings.author_email = payload.email
+    settings.author_avatar = payload.avatar
+    settings.author_link = payload.link
     db.commit()
     db.refresh(settings)
 

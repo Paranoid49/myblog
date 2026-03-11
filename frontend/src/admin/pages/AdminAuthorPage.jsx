@@ -3,15 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../shared/api/client';
 import AdminLayout from '../../shared/layout/AdminLayout';
 
+function renderAvatar(form) {
+  if (form.avatar) {
+    return <img src={form.avatar} alt={form.name || '作者头像'} className="author-avatar-image" />;
+  }
+  return (form.name || 'A').slice(0, 1).toUpperCase();
+}
+
 export default function AdminAuthorPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', bio: '', email: '' });
+  const [form, setForm] = useState({ name: '', bio: '', email: '', avatar: '', link: '' });
   const [error, setError] = useState('');
   const [saved, setSaved] = useState('');
 
   useEffect(() => {
     apiRequest('/author')
-      .then((data) => setForm({ name: data.name || '', bio: data.bio || '', email: data.email || '' }))
+      .then((data) => setForm({ name: data.name || '', bio: data.bio || '', email: data.email || '', avatar: data.avatar || '', link: data.link || '' }))
       .catch((e) => setError(e.message || 'load_failed'));
   }, []);
 
@@ -25,7 +32,13 @@ export default function AdminAuthorPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      setForm({ name: data.name || '', bio: data.bio || '', email: data.email || '' });
+      setForm({
+        name: data.name || '',
+        bio: data.bio || '',
+        email: data.email || '',
+        avatar: data.avatar || '',
+        link: data.link || '',
+      });
       setSaved('保存成功');
     } catch (e) {
       setError(e.message || 'save_failed');
@@ -50,6 +63,14 @@ export default function AdminAuthorPage() {
               <textarea value={form.bio} onChange={(e) => setForm((prev) => ({ ...prev, bio: e.target.value }))} rows={6} />
             </label>
             <label>
+              头像链接
+              <input value={form.avatar} onChange={(e) => setForm((prev) => ({ ...prev, avatar: e.target.value }))} placeholder="https://example.com/avatar.png" />
+            </label>
+            <label>
+              个人链接
+              <input value={form.link} onChange={(e) => setForm((prev) => ({ ...prev, link: e.target.value }))} placeholder="https://example.com" />
+            </label>
+            <label>
               邮箱
               <input type="email" value={form.email} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} />
             </label>
@@ -60,10 +81,15 @@ export default function AdminAuthorPage() {
         <article className="panel-card">
           <h3>前台预览</h3>
           <div className="author-card compact">
-            <div className="author-avatar">{(form.name || 'A').slice(0, 1).toUpperCase()}</div>
+            <div className="author-avatar">{renderAvatar(form)}</div>
             <div className="author-content">
               <h4>{form.name || '未设置昵称'}</h4>
               <p className="author-bio">{form.bio || '这个作者还没有留下简介。'}</p>
+              {form.link ? (
+                <p className="muted">
+                  个人链接：<a href={form.link} target="_blank" rel="noreferrer">{form.link}</a>
+                </p>
+              ) : null}
               <p className="muted">联系邮箱：{form.email || '暂未公开'}</p>
             </div>
           </div>

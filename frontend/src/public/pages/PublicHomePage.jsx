@@ -36,7 +36,11 @@ export default function PublicHomePage() {
           <article key={post.id} className="post-card">
             <div className="post-meta-row">
               <time>{formatDate(post.published_at)}</time>
-              <span>{post.category_name || '未分类'}</span>
+              {post.category_slug ? (
+                <Link to={`/categories/${post.category_slug}`} className="nav-link">{post.category_name || '未分类'}</Link>
+              ) : (
+                <span>{post.category_name || '未分类'}</span>
+              )}
             </div>
             <h2 className="post-card-title">
               <Link to={`/posts/${post.slug}`}>{post.title}</Link>
@@ -44,7 +48,7 @@ export default function PublicHomePage() {
             <p className="post-card-summary">{post.summary || '点击查看完整内容。'}</p>
             <div className="post-tag-list">
               {(post.tags || []).map((tag) => (
-                <span key={tag.id} className="tag-chip">#{tag.name}</span>
+                <Link key={tag.id} to={`/tags/${tag.slug}`} className="tag-chip">#{tag.name}</Link>
               ))}
             </div>
           </article>

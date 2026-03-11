@@ -6,6 +6,8 @@ import AdminPostsPage from './admin/pages/AdminPostsPage';
 import AdminTaxonomyPage from './admin/pages/AdminTaxonomyPage';
 import AdminAuthorPage from './admin/pages/AdminAuthorPage';
 import AuthGuard from './shared/auth/AuthGuard';
+import PublicCategoryPage from './public/pages/PublicCategoryPage';
+import PublicTagPage from './public/pages/PublicTagPage';
 import PublicHomePage from './public/pages/PublicHomePage';
 import PublicPostDetailPage from './public/pages/PublicPostDetailPage';
 import PublicAuthorPage from './public/pages/PublicAuthorPage';
@@ -16,6 +18,8 @@ export default function App() {
       <Route path="/setup" element={<SetupPage />} />
       <Route path="/" element={<PublicHomePage />} />
       <Route path="/posts/:slug" element={<PublicPostDetailPage />} />
+      <Route path="/categories/:slug" element={<PublicCategoryPage />} />
+      <Route path="/tags/:slug" element={<PublicTagPage />} />
       <Route path="/author" element={<PublicAuthorPage />} />
 
       <Route path="/admin/login" element={<LoginPage />} />

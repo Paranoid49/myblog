@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom';
 import { apiRequest } from '../../shared/api/client';
 import PublicLayout from '../../shared/layout/PublicLayout';
 
+function renderAvatar(author) {
+  if (author.avatar) {
+    return <img src={author.avatar} alt={author.name || '作者头像'} className="author-avatar-image" />;
+  }
+  return (author.name || 'A').slice(0, 1).toUpperCase();
+}
+
 export default function PublicAuthorPage() {
   const [author, setAuthor] = useState(null);
   const [error, setError] = useState('');
@@ -24,10 +31,15 @@ export default function PublicAuthorPage() {
 
       {author ? (
         <section className="author-card">
-          <div className="author-avatar">{(author.name || 'A').slice(0, 1).toUpperCase()}</div>
+          <div className="author-avatar">{renderAvatar(author)}</div>
           <div className="author-content">
             <h2>{author.name || '未设置昵称'}</h2>
             <p className="author-bio">{author.bio || '这个作者还没有留下简介。'}</p>
+            {author.link ? (
+              <p style={{ marginBottom: 'var(--space-sm)' }}>
+                个人链接：<a href={author.link} target="_blank" rel="noreferrer" className="nav-link">{author.link}</a>
+              </p>
+            ) : null}
             {author.email ? (
               <p className="muted" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>
                 {'<'}{author.email}{'>'}
