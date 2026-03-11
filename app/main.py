@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -29,6 +29,11 @@ app.include_router(api_v1_setup_router)
 app.include_router(api_v1_auth_router)
 app.include_router(api_v1_author_router)
 app.include_router(api_v1_posts_router)
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == 401 and isinstance(exc.detail, dict):
+        return JSONResponse(status_code=401, content=exc.detail)
+    raise exc
 
 
 # 不需要初始化检查的路径

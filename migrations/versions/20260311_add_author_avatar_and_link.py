@@ -2,7 +2,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = "20260311_add_author_avatar_and_link"
+revision = "20260311_add_author_meta"
 down_revision = "20260309_add_author_fields"
 branch_labels = None
 depends_on = None

@@ -2,17 +2,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, UploadFile, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
+from app.core.deps import get_current_admin
 from app.core.hook_bus import hook_bus
-from app.models import Category, Post, Tag
+from app.models import Category, Post, Tag, User
 from app.schemas.post import PostCreate
-from app.services.taxonomy_service import get_category_by_slug, get_tag_by_slug
+from app.services.taxonomy_service import get_category_by_slug, get_tag_by_slug, list_taxonomy
 from app.services.post_service import (
     build_post,
     get_post_by_slug,
@@ -96,12 +97,6 @@ def _ok(data: dict | list | None = None, message: str = "ok", status_code: int =
 
 def _error(message: str, status_code: int, code: int) -> JSONResponse:
     return JSONResponse(status_code=status_code, content={"code": code, "message": message, "data": None})
-
-
-def _require_login(request: Request) -> JSONResponse | None:
-    if not request.session.get("user_id"):
-        return _error("unauthorized", status.HTTP_401_UNAUTHORIZED, 1002)
-    return None
 
 
 def _resolve_category_id(db: Session, category_id: int | None) -> int:
@@ -205,15 +200,11 @@ def get_tag_posts_api(slug: str, db: Session = Depends(get_db)) -> JSONResponse:
 
 @router.get("/admin/posts", response_model=ApiResponse)
 def list_admin_posts_api(
-    request: Request,
     category_id: int | None = None,
     tag_id: int | None = None,
+    current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    auth_error = _require_login(request)
-    if auth_error:
-        return auth_error
-
     stmt = select(Post).order_by(Post.created_at.desc())
     if category_id is not None:
         stmt = stmt.where(Post.category_id == category_id)
@@ -225,11 +216,11 @@ def list_admin_posts_api(
 
 
 @router.post("/admin/posts", response_model=ApiResponse)
-def create_admin_post_api(payload: AdminPostCreateRequest, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    auth_error = _require_login(request)
-    if auth_error:
-        return auth_error
-
+def create_admin_post_api(
+    payload: AdminPostCreateRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     resolved_category_id = _resolve_category_id(db, payload.category_id)
     existing_slugs = set(db.execute(select(Post.slug)).scalars().all())
     post = build_post(
@@ -254,11 +245,11 @@ def create_admin_post_api(payload: AdminPostCreateRequest, request: Request, db:
 
 
 @router.post("/admin/posts/import-markdown", response_model=ApiResponse)
-def import_markdown_post_api(payload: ImportMarkdownRequest, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    auth_error = _require_login(request)
-    if auth_error:
-        return auth_error
-
+def import_markdown_post_api(
+    payload: ImportMarkdownRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     title = _extract_title(payload.markdown)
     resolved_category_id = _resolve_category_id(db, payload.category_id)
     existing_slugs = set(db.execute(select(Post.slug)).scalars().all())
@@ -284,11 +275,12 @@ def import_markdown_post_api(payload: ImportMarkdownRequest, request: Request, d
 
 
 @router.post("/admin/posts/{post_id}", response_model=ApiResponse)
-def update_admin_post_api(post_id: int, payload: AdminPostUpdateRequest, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    auth_error = _require_login(request)
-    if auth_error:
-        return auth_error
-
+def update_admin_post_api(
+    post_id: int,
+    payload: AdminPostUpdateRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     post = db.get(Post, post_id)
     if not post:
         return _error("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
@@ -317,11 +309,11 @@ def update_admin_post_api(post_id: int, payload: AdminPostUpdateRequest, request
 
 
 @router.get("/admin/posts/{post_id}/export-markdown", response_model=ApiResponse)
-def export_markdown_post_api(post_id: int, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    auth_error = _require_login(request)
-    if auth_error:
-        return auth_error
-
+def export_markdown_post_api(
+    post_id: int,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     post = db.get(Post, post_id)
     if not post:
         return _error("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
@@ -331,11 +323,11 @@ def export_markdown_post_api(post_id: int, request: Request, db: Session = Depen
 
 
 @router.post("/admin/media/images", response_model=ApiResponse)
-async def upload_image_api(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)) -> JSONResponse:
-    auth_error = _require_login(request)
-    if auth_error:
-        return auth_error
-
+async def upload_image_api(
+    file: UploadFile = File(...),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     content_type = file.content_type or ""
     if content_type not in ALLOWED_IMAGE_TYPES:
         return _error("unsupported_image_type", status.HTTP_400_BAD_REQUEST, 1411)
@@ -371,11 +363,11 @@ async def upload_image_api(request: Request, file: UploadFile = File(...), db: S
 
 
 @router.post("/admin/posts/{post_id}/publish", response_model=ApiResponse)
-def publish_post_api(post_id: int, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    auth_error = _require_login(request)
-    if auth_error:
-        return auth_error
-
+def publish_post_api(
+    post_id: int,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     post = db.get(Post, post_id)
     if not post:
         return _error("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
@@ -388,11 +380,11 @@ def publish_post_api(post_id: int, request: Request, db: Session = Depends(get_d
 
 
 @router.post("/admin/posts/{post_id}/unpublish", response_model=ApiResponse)
-def unpublish_post_api(post_id: int, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    auth_error = _require_login(request)
-    if auth_error:
-        return auth_error
-
+def unpublish_post_api(
+    post_id: int,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     post = db.get(Post, post_id)
     if not post:
         return _error("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
@@ -405,13 +397,8 @@ def unpublish_post_api(post_id: int, request: Request, db: Session = Depends(get
 
 
 @router.get("/taxonomy", response_model=ApiResponse)
-def list_taxonomy_api(request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    auth_error = _require_login(request)
-    if auth_error:
-        return auth_error
-
-    categories = list(db.execute(select(Category).order_by(Category.name.asc())).scalars().all())
-    tags = list(db.execute(select(Tag).order_by(Tag.name.asc())).scalars().all())
+def list_taxonomy_api(current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)) -> JSONResponse:
+    categories, tags = list_taxonomy(db)
     return _ok(
         {
             "categories": [_serialize_category(category) for category in categories],
@@ -421,11 +408,11 @@ def list_taxonomy_api(request: Request, db: Session = Depends(get_db)) -> JSONRe
 
 
 @router.post("/admin/categories", response_model=ApiResponse)
-def create_category_api(payload: NameCreateRequest, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    auth_error = _require_login(request)
-    if auth_error:
-        return auth_error
-
+def create_category_api(
+    payload: NameCreateRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     normalized_name = payload.name.strip()
     category_slug = slugify(normalized_name)
     exists = db.execute(select(Category.id).where(Category.slug == category_slug)).first() is not None
@@ -440,11 +427,11 @@ def create_category_api(payload: NameCreateRequest, request: Request, db: Sessio
 
 
 @router.post("/admin/tags", response_model=ApiResponse)
-def create_tag_api(payload: NameCreateRequest, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    auth_error = _require_login(request)
-    if auth_error:
-        return auth_error
-
+def create_tag_api(
+    payload: NameCreateRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     normalized_name = payload.name.strip()
     tag_slug = slugify(normalized_name)
     exists = db.execute(select(Tag.id).where(Tag.slug == tag_slug)).first() is not None

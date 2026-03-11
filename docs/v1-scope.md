@@ -45,8 +45,8 @@
 ## 4. 架构原则
 
 ### 4.1 前后端分离
-- 前端：React（管理端优先迁移，前台随后迁移）
-- 后端：FastAPI 仅提供 JSON API（`/api/v1/*`）
+- 前端：React SPA（管理端与前台均已迁移）
+- 后端：FastAPI 提供 JSON API（`/api/v1/*`），并负责静态资源与 SPA fallback 托管
 - 统一响应结构：`code / message / data`
 
 ### 4.2 轻量优先

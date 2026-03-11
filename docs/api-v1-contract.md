@@ -33,6 +33,10 @@
 - `1404`：`post_not_found`
 - `1409`：`category_exists`
 - `1410`：`tag_exists`
+- `1411`：`unsupported_image_type`
+- `1412`：`image_too_large`
+- `1413`：`category_not_found`
+- `1414`：`tag_not_found`
 
 ## 3. 认证接口（Public/Auth）
 
@@ -79,6 +83,32 @@
 - 说明：返回单篇已发布文章详情
 - 成功：200
 - 失败：404（`1404`）
+
+### 5.3 GET `/api/v1/categories/{slug}`
+- 说明：返回指定分类下的已发布文章列表
+- 成功：200
+- 失败：404（`1413`）
+- 返回 data：
+
+```json
+{
+  "category": { "id": 1, "name": "Python", "slug": "python" },
+  "posts": []
+}
+```
+
+### 5.4 GET `/api/v1/tags/{slug}`
+- 说明：返回指定标签下的已发布文章列表
+- 成功：200
+- 失败：404（`1414`）
+- 返回 data：
+
+```json
+{
+  "tag": { "id": 1, "name": "FastAPI", "slug": "fastapi" },
+  "posts": []
+}
+```
 
 ## 6. 后台文章接口（Admin/Posts）
 
@@ -168,7 +198,7 @@
 
 ## 9. 管理端与前台边界
 
-- 前台仅使用：`/posts`、`/posts/{slug}`、`/author`
+- 前台仅使用：`/posts`、`/posts/{slug}`、`/categories/{slug}`、`/tags/{slug}`、`/author`
 - 管理端仅使用：`/auth/*`、`/author`（写）、`/admin/posts*`、`/taxonomy`、`/admin/categories`、`/admin/tags`
 - 前台不直接调用后台写接口
 

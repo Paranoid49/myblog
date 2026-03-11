@@ -1,6 +1,11 @@
+from pathlib import Path
 from unittest.mock import patch
 
-from scripts.start_blog import main
+from scripts.start_blog import PROJECT_ROOT, main
+
+
+def test_start_blog_inserts_project_root_into_sys_path() -> None:
+    assert PROJECT_ROOT == Path(__file__).resolve().parents[1]
 
 
 def test_start_blog_runs_migration_and_uvicorn() -> None:

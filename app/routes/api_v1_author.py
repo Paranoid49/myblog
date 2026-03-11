@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
+from app.core.deps import get_current_admin
+from app.models import User
 from app.services.setup_service import get_site_settings
 
 router = APIRouter(prefix="/api/v1/author", tags=["api-v1-author"])
@@ -43,12 +45,6 @@ def _error(message: str, status_code: int, code: int) -> JSONResponse:
     return JSONResponse(status_code=status_code, content={"code": code, "message": message, "data": None})
 
 
-def _require_login(request: Request) -> JSONResponse | None:
-    if not request.session.get("user_id"):
-        return _error("unauthorized", status.HTTP_401_UNAUTHORIZED, 1002)
-    return None
-
-
 def _serialize_author(settings) -> dict:
     return {
         "name": settings.author_name,
@@ -69,11 +65,11 @@ def get_author_profile(db: Session = Depends(get_db)) -> JSONResponse:
 
 
 @router.post("", response_model=ApiResponse)
-def update_author_profile(payload: AuthorProfileUpdateRequest, request: Request, db: Session = Depends(get_db)) -> JSONResponse:
-    auth_error = _require_login(request)
-    if auth_error:
-        return auth_error
-
+def update_author_profile(
+    payload: AuthorProfileUpdateRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     settings = get_site_settings(db)
     if settings is None:
         return _error("site_not_initialized", status.HTTP_409_CONFLICT, 1001)
