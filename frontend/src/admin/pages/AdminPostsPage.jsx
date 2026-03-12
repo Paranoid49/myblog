@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../shared/api/client';
 import AdminPostEditor from '../components/AdminPostEditor';
+import AdminPostFilters from '../components/AdminPostFilters';
 import AdminPostList from '../components/AdminPostList';
 import AdminLayout from '../../shared/layout/AdminLayout';
 
@@ -199,21 +200,11 @@ export default function AdminPostsPage() {
         onUploadImage={uploadImage}
       />
 
-      <section className="panel-card">
-        <div className="section-head">
-          <h3>筛选</h3>
-        </div>
-        <div className="filter-row">
-          <select value={filter.category_id} onChange={(e) => applyFilter({ ...filter, category_id: e.target.value })}>
-            <option value="">全部分类</option>
-            {taxonomy.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <select value={filter.tag_id} onChange={(e) => applyFilter({ ...filter, tag_id: e.target.value })}>
-            <option value="">全部标签</option>
-            {taxonomy.tags.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select>
-        </div>
-      </section>
+      <AdminPostFilters
+        filter={filter}
+        taxonomy={taxonomy}
+        onApplyFilter={applyFilter}
+      />
 
       <AdminPostList
         posts={posts}

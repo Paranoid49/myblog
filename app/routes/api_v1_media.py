@@ -8,7 +8,7 @@ from app.core.db import get_db
 from app.core.deps import get_current_admin
 from app.core.hook_bus import hook_bus
 from app.models import User
-from app.routes.api_v1_posts import ApiResponse, _error, _ok
+from app.schemas.api_response import ApiResponse, error_response, ok_response
 from app.services.post_service import slugify
 
 router = APIRouter(prefix="/api/v1", tags=["api-v1-media"])
@@ -26,11 +26,11 @@ async def upload_image_api(
 ) -> JSONResponse:
     content_type = file.content_type or ""
     if content_type not in ALLOWED_IMAGE_TYPES:
-        return _error("unsupported_image_type", status.HTTP_400_BAD_REQUEST, 1411)
+        return error_response("unsupported_image_type", status.HTTP_400_BAD_REQUEST, 1411)
 
     content = await file.read()
     if len(content) > MAX_IMAGE_SIZE:
-        return _error("image_too_large", status.HTTP_400_BAD_REQUEST, 1412)
+        return error_response("image_too_large", status.HTTP_400_BAD_REQUEST, 1412)
 
     ext_map = {
         "image/jpeg": ".jpg",
@@ -47,7 +47,7 @@ async def upload_image_api(
 
     url = f"/static/uploads/{filename}"
     hook_bus.emit("media.image_uploaded", {"key": filename, "url": url, "content_type": content_type})
-    return _ok(
+    return ok_response(
         {
             "url": url,
             "key": filename,

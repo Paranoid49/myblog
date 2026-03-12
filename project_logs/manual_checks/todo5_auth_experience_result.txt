@@ -1,0 +1,6 @@
+login_ok=True
+refresh_ok=True
+login_redirect_ok=True
+logout_ok=True
+logout_link_ok=True
+success=True

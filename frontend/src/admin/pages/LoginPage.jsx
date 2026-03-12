@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../shared/api/client';
-import { getStoredUser, setStoredUser } from '../../shared/auth/session';
+import { hasStoredUser, setStoredUser } from '../../shared/auth/session';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('admin');
@@ -12,9 +12,9 @@ export default function LoginPage() {
   const location = useLocation();
 
   const redirectTo = location.state?.from || '/admin';
-  const storedUser = getStoredUser();
+  const isLoggedIn = hasStoredUser();
 
-  if (storedUser) {
+  if (isLoggedIn) {
     return <Navigate to="/admin" replace />;
   }
 

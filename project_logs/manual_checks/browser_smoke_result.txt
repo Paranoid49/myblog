@@ -1,0 +1,6 @@
+login=True
+login_redirect=True
+public_admin_entry=True
+create_post=True
+publish_post=True
+view_post_detail=True
