@@ -7,6 +7,13 @@ from sqlalchemy.engine import make_url
 
 from app.core.config import settings
 from app.core.db import SessionLocal
+from app.core.error_codes import (
+    SETUP_ALREADY_INITIALIZED,
+    SETUP_DATABASE_BOOTSTRAP_FAILED,
+    SETUP_MIGRATION_FAILED,
+    SETUP_PASSWORD_MISMATCH,
+)
+from app.schemas.api_response import ApiResponse, error_response, ok_response
 from app.services.database_bootstrap_service import (
     DatabaseBootstrapError,
     UnsupportedDatabaseBootstrapError,
@@ -38,12 +45,6 @@ class SetupRequest(BaseModel):
         return value
 
 
-def _ok(data: dict | None = None, message: str = "ok") -> JSONResponse:
-    return JSONResponse(status_code=200, content={"code": 0, "message": message, "data": data})
-
-
-def _error(message: str, status_code: int, code: int) -> JSONResponse:
-    return JSONResponse(status_code=status_code, content={"code": code, "message": message, "data": None})
 
 
 @contextmanager
@@ -59,41 +60,41 @@ def _should_bootstrap_database() -> bool:
     return make_url(settings.database_url).drivername.startswith("postgresql")
 
 
-@router.get("/status")
+@router.get("/status", response_model=ApiResponse)
 def get_setup_status() -> JSONResponse:
     db_exists = database_exists()
 
     if not db_exists:
-        return _ok({"initialized": False, "database_exists": False})
+        return ok_response({"initialized": False, "database_exists": False})
 
     with _create_session() as db:
         initialized = is_initialized(db)
 
-    return _ok({"initialized": initialized, "database_exists": db_exists})
+    return ok_response({"initialized": initialized, "database_exists": db_exists})
 
 
 @router.post("")
 def perform_setup(request: Request, data: SetupRequest) -> JSONResponse:
     if data.password != data.confirm_password:
-        return _error("password_mismatch", 400, 2001)
+        return error_response("password_mismatch", 400, SETUP_PASSWORD_MISMATCH)
 
     if not database_exists():
         if _should_bootstrap_database():
             try:
                 ensure_database_exists(settings.database_url)
             except (DatabaseBootstrapError, UnsupportedDatabaseBootstrapError) as e:
-                return _error(f"database_bootstrap_failed: {e}", 500, 2002)
+                return error_response(f"database_bootstrap_failed: {e}", 500, SETUP_DATABASE_BOOTSTRAP_FAILED)
 
     try:
         upgrade_database()
     except Exception as e:
-        return _error(f"migration_failed: {e}", 500, 2003)
+        return error_response(f"migration_failed: {e}", 500, SETUP_MIGRATION_FAILED)
 
     with _create_session() as db:
         try:
             user = initialize_site(db=db, blog_title=data.blog_title, username=data.username, password=data.password)
         except SetupAlreadyInitializedError:
-            return _error("already_initialized", 409, 2004)
+            return error_response("already_initialized", 409, SETUP_ALREADY_INITIALIZED)
 
     request.session["user_id"] = user.id
-    return _ok({"user_id": user.id, "username": user.username})
+    return ok_response({"user_id": user.id, "username": user.username})

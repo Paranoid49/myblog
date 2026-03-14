@@ -1,5 +1,15 @@
 # 个人博客首版设计文档
 
+> **历史方案说明（已过期）**
+>
+> 本文档记录的是 2026-03-08 的早期方案，当时项目仍以 **FastAPI + Jinja2 + PostgreSQL + 单体 SSR** 为基线。
+> 当前项目现状已经演进为 **React SPA + FastAPI JSON API + 默认 SQLite + 单体部署**。
+>
+> 因此：
+> - 本文档仅供理解早期设计背景与演进脉络
+> - 不应作为当前实现、当前架构或当前文档真相源依据
+> - 当前真相请优先阅读 `docs/product/`、`docs/architecture/`、`docs/api/`、`docs/engineering/`
+
 日期：2026-03-08
 
 ## 1. 目标

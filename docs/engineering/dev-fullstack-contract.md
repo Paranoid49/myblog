@@ -16,6 +16,7 @@
 
 ## 推荐启动入口
 
+### 全栈联调（默认推荐）
 开发时推荐统一使用：
 
 ```bash
@@ -34,6 +35,17 @@ python scripts/start_fullstack.py
 ```bash
 python scripts/start_fullstack.py --backend-port 8000 --frontend-port 5173 --no-browser
 ```
+
+### 仅后端开发
+若当前只处理后端 API、数据库迁移或启动链路，推荐直接使用：
+
+```bash
+python scripts/start_blog.py
+```
+
+### 历史兼容脚本说明
+- `python scripts/run_dev.py` 仍保留为兼容脚本
+- 但不再作为主文档入口推荐，避免形成与 `start_blog.py` / `start_fullstack.py` 的重复说明
 
 ---
 

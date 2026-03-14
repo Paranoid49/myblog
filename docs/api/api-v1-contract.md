@@ -27,6 +27,8 @@
 
 ## 2. 错误码约定
 
+> 当前错误码权威来源：`app/core/error_codes.py`
+
 - `1001`：`site_not_initialized`
 - `1002`：`unauthorized`
 - `1003`：`invalid_credentials`

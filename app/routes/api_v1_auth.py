@@ -1,64 +1,33 @@
-from datetime import datetime
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
+from app.core.error_codes import INVALID_CREDENTIALS, SITE_NOT_INITIALIZED
+from app.schemas.api_response import ApiResponse, error_response, ok_response
 from app.services.auth_service import authenticate_user
 from app.services.setup_service import is_initialized
 
-DEBUG_LOG = Path(__file__).resolve().parents[2] / "project_logs" / "manual_checks" / "auth_login_debug.log"
-
 router = APIRouter(prefix="/api/v1/auth", tags=["api-v1-auth"])
-
-
-def _ok(data: dict | None = None, message: str = "ok", status_code: int = 200) -> JSONResponse:
-    return JSONResponse(status_code=status_code, content={"code": 0, "message": message, "data": data})
-
-
-def _error(message: str, status_code: int, code: int) -> JSONResponse:
-    return JSONResponse(status_code=status_code, content={"code": code, "message": message, "data": None})
-
-
-@router.post("/login")
+@router.post("/login", response_model=ApiResponse)
 def api_login(
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    DEBUG_LOG.parent.mkdir(parents=True, exist_ok=True)
-    with DEBUG_LOG.open("a", encoding="utf-8") as f:
-        f.write(
-            "\n".join(
-                [
-                    f"ts={datetime.now().isoformat()}",
-                    f"content_type={request.headers.get('content-type')}",
-                    f"origin={request.headers.get('origin')}",
-                    f"referer={request.headers.get('referer')}",
-                    f"host={request.headers.get('host')}",
-                    f"username={username}",
-                    f"password_length={len(password)}",
-                    "---",
-                ]
-            )
-            + "\n"
-        )
-
     if not is_initialized(db):
-        return _error("site_not_initialized", status.HTTP_409_CONFLICT, 1001)
+        return error_response("site_not_initialized", status.HTTP_409_CONFLICT, SITE_NOT_INITIALIZED)
 
     user = authenticate_user(db, username, password)
     if not user:
-        return _error("invalid_credentials", status.HTTP_401_UNAUTHORIZED, 1003)
+        return error_response("invalid_credentials", status.HTTP_401_UNAUTHORIZED, INVALID_CREDENTIALS)
 
     request.session["user_id"] = user.id
-    return _ok({"user_id": user.id, "username": user.username})
+    return ok_response({"user_id": user.id, "username": user.username})
 
 
-@router.post("/logout")
+@router.post("/logout", response_model=ApiResponse)
 def api_logout(request: Request) -> JSONResponse:
     request.session.clear()
-    return _ok(None)
+    return ok_response(None)

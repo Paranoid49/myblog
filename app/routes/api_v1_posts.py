@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.deps import get_current_admin
+from app.core.error_codes import POST_NOT_FOUND
 from app.core.hook_bus import hook_bus
 from app.models import Post, Tag, User
 from app.schemas.api_response import ApiResponse, error_response, ok_response
@@ -126,10 +127,53 @@ def _create_post_entity(db: Session, data: PostCreate) -> Post:
     return post
 
 
+def _save_post(db: Session, post: Post, *, event_name: str) -> JSONResponse:
+    db.add(post)
+    db.commit()
+    db.refresh(post)
+    hook_bus.emit(event_name, {"post_id": post.id, "slug": post.slug})
+    return ok_response(_serialize_post(post), status_code=status.HTTP_201_CREATED)
+
+
+def _commit_post_update(db: Session, post: Post, *, event_name: str) -> JSONResponse:
+    db.commit()
+    db.refresh(post)
+    hook_bus.emit(event_name, {"post_id": post.id, "slug": post.slug})
+    return ok_response(_serialize_post(post))
+
+
+def _create_post_data(
+    db: Session,
+    *,
+    title: str,
+    summary: str | None,
+    content: str,
+    category_id: int | None,
+    tag_ids: list[int],
+) -> PostCreate:
+    return _build_post_create(
+        db,
+        title=title,
+        summary=summary,
+        content=content,
+        category_id=category_id,
+        tag_ids=tag_ids,
+    )
+
+
+def _build_admin_post_query(category_id: int | None = None, tag_id: int | None = None):
+    stmt = select(Post).order_by(Post.created_at.desc())
+    if category_id is not None:
+        stmt = stmt.where(Post.category_id == category_id)
+    if tag_id is not None:
+        stmt = stmt.where(Post.tags.any(Tag.id == tag_id))
+    return stmt
+
+
 def _get_post_or_404(db: Session, post_id: int) -> Post | JSONResponse:
     post = db.get(Post, post_id)
     if not post:
-        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
+        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, POST_NOT_FOUND)
     return post
 
 
@@ -146,7 +190,7 @@ def list_posts_api(db: Session = Depends(get_db)) -> JSONResponse:
 def get_post_detail_api(slug: str, db: Session = Depends(get_db)) -> JSONResponse:
     post = get_post_by_slug(db, slug)
     if not post or not post.published_at:
-        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
+        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, POST_NOT_FOUND)
     return ok_response(_serialize_post(post))
 
 
@@ -160,13 +204,7 @@ def list_admin_posts_api(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    stmt = select(Post).order_by(Post.created_at.desc())
-    if category_id is not None:
-        stmt = stmt.where(Post.category_id == category_id)
-    if tag_id is not None:
-        stmt = stmt.where(Post.tags.any(Tag.id == tag_id))
-
-    posts = list(db.execute(stmt).scalars().all())
+    posts = list(db.execute(_build_admin_post_query(category_id, tag_id)).scalars().all())
     return ok_response([_serialize_post(post) for post in posts])
 
 
@@ -176,7 +214,7 @@ def create_admin_post_api(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    data = _build_post_create(
+    data = _create_post_data(
         db,
         title=payload.title,
         summary=payload.summary,
@@ -185,12 +223,7 @@ def create_admin_post_api(
         tag_ids=payload.tag_ids,
     )
     post = _create_post_entity(db, data)
-
-    db.add(post)
-    db.commit()
-    db.refresh(post)
-    hook_bus.emit("post.created", {"post_id": post.id, "slug": post.slug})
-    return ok_response(_serialize_post(post), status_code=status.HTTP_201_CREATED)
+    return _save_post(db, post, event_name="post.created")
 
 
 # markdown import/export
@@ -202,7 +235,7 @@ def import_markdown_post_api(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    data = _build_post_create(
+    data = _create_post_data(
         db,
         title=_extract_title(payload.markdown),
         summary=None,
@@ -211,12 +244,7 @@ def import_markdown_post_api(
         tag_ids=payload.tag_ids,
     )
     post = _create_post_entity(db, data)
-
-    db.add(post)
-    db.commit()
-    db.refresh(post)
-    hook_bus.emit("post.created", {"post_id": post.id, "slug": post.slug})
-    return ok_response(_serialize_post(post), status_code=status.HTTP_201_CREATED)
+    return _save_post(db, post, event_name="post.created")
 
 
 @router.post("/admin/posts/{post_id}", response_model=ApiResponse)
@@ -230,7 +258,7 @@ def update_admin_post_api(
     if isinstance(post, JSONResponse):
         return post
 
-    data = _build_post_create(
+    data = _create_post_data(
         db,
         title=payload.title,
         summary=payload.summary,
@@ -240,11 +268,7 @@ def update_admin_post_api(
     )
     tags = get_tags_by_ids(db, data.tag_ids)
     update_post(post, data, tags)
-
-    db.commit()
-    db.refresh(post)
-    hook_bus.emit("post.updated", {"post_id": post.id, "slug": post.slug})
-    return ok_response(_serialize_post(post))
+    return _commit_post_update(db, post, event_name="post.updated")
 
 
 @router.get("/admin/posts/{post_id}/export-markdown", response_model=ApiResponse)
@@ -275,10 +299,7 @@ def publish_post_api(
         return post
 
     publish_post(post)
-    db.commit()
-    db.refresh(post)
-    hook_bus.emit("post.published", {"post_id": post.id, "slug": post.slug})
-    return ok_response(_serialize_post(post))
+    return _commit_post_update(db, post, event_name="post.published")
 
 
 @router.post("/admin/posts/{post_id}/unpublish", response_model=ApiResponse)
@@ -292,7 +313,4 @@ def unpublish_post_api(
         return post
 
     unpublish_post(post)
-    db.commit()
-    db.refresh(post)
-    hook_bus.emit("post.unpublished", {"post_id": post.id, "slug": post.slug})
-    return ok_response(_serialize_post(post))
+    return _commit_post_update(db, post, event_name="post.unpublished")

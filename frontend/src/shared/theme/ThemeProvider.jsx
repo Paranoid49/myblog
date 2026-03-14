@@ -53,5 +53,7 @@ export function useTheme() {
 
 export function registerTheme(themeKey) {
   if (!themeKey) return;
-  THEME_REGISTRY[themeKey] = { key: themeKey };
+  const normalizedKey = String(themeKey).trim();
+  if (!normalizedKey) return;
+  THEME_REGISTRY[normalizedKey] = { key: normalizedKey };
 }

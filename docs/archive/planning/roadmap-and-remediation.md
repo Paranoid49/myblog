@@ -70,5 +70,5 @@
 
 ## 原始来源文档
 
-- `docs/implementation-alignment-remediation-checklist.md`
-- `docs/next-phase-optimization-todos.md`
+- `docs/archive/planning/implementation-alignment-remediation-checklist.md`
+- `docs/archive/planning/next-phase-optimization-todos.md`

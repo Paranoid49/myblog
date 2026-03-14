@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest /mnt/d/projects/python/myblog/tests/test_api_v1_auth.py /mnt/d/projects/python/myblog/tests/test_admin_auth.py)",
+      "Bash(\"/mnt/d/projects/python/myblog/.venv/Scripts/python.exe\" -m pytest \"/mnt/d/projects/python/myblog/tests/test_api_v1_auth.py\" \"/mnt/d/projects/python/myblog/tests/test_admin_auth.py\")",
+      "Bash(\"/mnt/d/projects/python/myblog/.venv/Scripts/python.exe\" -m pytest \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_api_v1_auth.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_admin_auth.py\")",
+      "Bash(\"/mnt/d/projects/python/myblog/.venv/Scripts/python.exe\" -m pytest \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_hook_bus.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_extension_loader.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_database_provider.py\")",
+      "Bash(\"/mnt/d/projects/python/myblog/.venv/Scripts/python.exe\" -m pytest \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_api_v1_auth.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_run_dev_script.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_start_blog_script.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_start_fullstack_script.py\")",
+      "Bash(\"/mnt/d/projects/python/myblog/.venv/Scripts/python.exe\" -m pytest \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_api_v1_auth.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_api_v1_posts.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_admin_posts.py\")",
+      "Bash(\"/mnt/d/projects/python/myblog/.venv/Scripts/python.exe\" -m pytest \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_philosophy_guardrails.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_api_v1_auth.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_hook_bus.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_start_blog_script.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_start_fullstack_script.py\")",
+      "Bash(\"/mnt/d/projects/python/myblog/.venv/Scripts/python.exe\" -m pytest \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_philosophy_guardrails.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_hook_bus.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_extension_loader.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_database_provider.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_start_blog_script.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_start_fullstack_script.py\")",
+      "Bash(\"/mnt/d/projects/python/myblog/.venv/Scripts/python.exe\" -m pytest \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_philosophy_guardrails.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_admin_auth.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_api_v1_posts.py\" \"D:\\\\projects\\\\python\\\\myblog\\\\tests\\\\test_admin_posts.py\")"
+    ]
+  }
+}

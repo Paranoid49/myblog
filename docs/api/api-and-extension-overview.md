@@ -28,6 +28,8 @@
 
 ## 主要错误码
 
+> 当前错误码权威来源：`app/core/error_codes.py`
+
 - `1001`：`site_not_initialized`
 - `1002`：`unauthorized`
 - `1003`：`invalid_credentials`
@@ -118,6 +120,9 @@
 - PostgreSQL
 
 根据 `DATABASE_URL` 解析 provider。
+
+图片类型支持与扩展名映射的权威来源位于：
+- `app/routes/api_v1_media.py` 中的 `IMAGE_EXTENSION_BY_TYPE`
 
 ---
 

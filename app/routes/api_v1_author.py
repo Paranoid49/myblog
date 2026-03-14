@@ -5,16 +5,12 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.deps import get_current_admin
+from app.core.error_codes import SITE_NOT_INITIALIZED
 from app.models import User
+from app.schemas.api_response import ApiResponse, error_response, ok_response
 from app.services.setup_service import get_site_settings
 
 router = APIRouter(prefix="/api/v1/author", tags=["api-v1-author"])
-
-
-class ApiResponse(BaseModel):
-    code: int
-    message: str
-    data: dict | None
 
 
 class AuthorProfileUpdateRequest(BaseModel):
@@ -37,14 +33,6 @@ class AuthorProfileUpdateRequest(BaseModel):
         return value.strip()
 
 
-def _ok(data: dict | None = None, message: str = "ok", status_code: int = 200) -> JSONResponse:
-    return JSONResponse(status_code=status_code, content={"code": 0, "message": message, "data": data})
-
-
-def _error(message: str, status_code: int, code: int) -> JSONResponse:
-    return JSONResponse(status_code=status_code, content={"code": code, "message": message, "data": None})
-
-
 def _serialize_author(settings) -> dict:
     return {
         "name": settings.author_name,
@@ -59,9 +47,9 @@ def _serialize_author(settings) -> dict:
 def get_author_profile(db: Session = Depends(get_db)) -> JSONResponse:
     settings = get_site_settings(db)
     if settings is None:
-        return _error("site_not_initialized", status.HTTP_409_CONFLICT, 1001)
+        return error_response("site_not_initialized", status.HTTP_409_CONFLICT, SITE_NOT_INITIALIZED)
 
-    return _ok(_serialize_author(settings))
+    return ok_response(_serialize_author(settings))
 
 
 @router.post("", response_model=ApiResponse)
@@ -72,7 +60,7 @@ def update_author_profile(
 ) -> JSONResponse:
     settings = get_site_settings(db)
     if settings is None:
-        return _error("site_not_initialized", status.HTTP_409_CONFLICT, 1001)
+        return error_response("site_not_initialized", status.HTTP_409_CONFLICT, SITE_NOT_INITIALIZED)
 
     settings.author_name = payload.name
     settings.author_bio = payload.bio
@@ -82,4 +70,4 @@ def update_author_profile(
     db.commit()
     db.refresh(settings)
 
-    return _ok(_serialize_author(settings))
+    return ok_response(_serialize_author(settings))

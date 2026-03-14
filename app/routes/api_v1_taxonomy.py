@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.deps import get_current_admin
+from app.core.error_codes import CATEGORY_EXISTS, CATEGORY_NOT_FOUND, TAG_EXISTS, TAG_NOT_FOUND
 from app.models import Category, Tag, User
 from app.schemas.api_response import ApiResponse, error_response, ok_response
 from app.services.admin_post_service import category_exists_by_name, tag_exists_by_name
@@ -53,7 +54,7 @@ def _serialize_post(post) -> dict:
 def get_category_posts_api(slug: str, db: Session = Depends(get_db)) -> JSONResponse:
     category = get_category_by_slug(db, slug)
     if not category:
-        return error_response("category_not_found", status.HTTP_404_NOT_FOUND, 1413)
+        return error_response("category_not_found", status.HTTP_404_NOT_FOUND, CATEGORY_NOT_FOUND)
 
     posts = [post for post in category.posts if post.published_at]
     posts.sort(key=lambda post: post.published_at, reverse=True)
@@ -64,7 +65,7 @@ def get_category_posts_api(slug: str, db: Session = Depends(get_db)) -> JSONResp
 def get_tag_posts_api(slug: str, db: Session = Depends(get_db)) -> JSONResponse:
     tag = get_tag_by_slug(db, slug)
     if not tag:
-        return error_response("tag_not_found", status.HTTP_404_NOT_FOUND, 1414)
+        return error_response("tag_not_found", status.HTTP_404_NOT_FOUND, TAG_NOT_FOUND)
 
     posts = [post for post in tag.posts if post.published_at]
     posts.sort(key=lambda post: post.published_at, reverse=True)
@@ -86,7 +87,7 @@ def create_category_api(
     normalized_name = payload.name.strip()
     category_slug = slugify(normalized_name)
     if category_exists_by_name(db, normalized_name):
-        return error_response("category_exists", status.HTTP_409_CONFLICT, 1409)
+        return error_response("category_exists", status.HTTP_409_CONFLICT, CATEGORY_EXISTS)
 
     category = Category(name=normalized_name, slug=category_slug)
     db.add(category)
@@ -104,7 +105,7 @@ def create_tag_api(
     normalized_name = payload.name.strip()
     tag_slug = slugify(normalized_name)
     if tag_exists_by_name(db, normalized_name):
-        return error_response("tag_exists", status.HTTP_409_CONFLICT, 1410)
+        return error_response("tag_exists", status.HTTP_409_CONFLICT, TAG_EXISTS)
 
     tag = Tag(name=normalized_name, slug=tag_slug)
     db.add(tag)

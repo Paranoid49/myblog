@@ -1,5 +1,15 @@
 # Blog MVP Implementation Plan
 
+> **历史实施计划说明（已过期）**
+>
+> 本文档对应的是项目早期实现计划，基于 **FastAPI + Jinja2 + PostgreSQL** 的单体 SSR 方案编写。
+> 当前项目已演进为前后端分离实现，因此本文档仅保留为历史实施档案。
+>
+> 请注意：
+> - 本文档不再代表当前目录结构、技术基线或实现路径
+> - 仅适合用于回顾项目历史决策
+> - 当前真相请优先阅读 `CLAUDE.md` 与 `docs/README.md`
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** 构建一个基于 FastAPI + Jinja2 + PostgreSQL 的个人博客首版最小闭环，支持管理员登录、文章发布/编辑、前台文章展示、分类与标签页面。

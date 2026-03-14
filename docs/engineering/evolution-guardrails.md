@@ -10,6 +10,10 @@
 - 克制
 - 可扩展
 
+进行较大改动前，建议先配合阅读：
+
+- `docs/engineering/change-review-checklist.md`
+
 本守则关注以下五类高风险方向：
 
 1. 文章模块持续中心化

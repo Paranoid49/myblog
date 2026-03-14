@@ -115,7 +115,7 @@ src/
 }
 ```
 
-错误码定义见 `docs/api-v1-contract.md`。
+错误码定义见 `docs/api/api-v1-contract.md`。
 
 ### 中文 Slug 处理
 - 使用 pypinyin 将中文标题转换为拼音 slug

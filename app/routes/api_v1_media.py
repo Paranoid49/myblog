@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.deps import get_current_admin
+from app.core.error_codes import IMAGE_TOO_LARGE, UNSUPPORTED_IMAGE_TYPE
 from app.core.hook_bus import hook_bus
 from app.models import User
 from app.schemas.api_response import ApiResponse, error_response, ok_response
@@ -14,8 +15,18 @@ from app.services.post_service import slugify
 router = APIRouter(prefix="/api/v1", tags=["api-v1-media"])
 
 UPLOAD_DIR = Path(__file__).resolve().parents[1] / "static" / "uploads"
-MAX_IMAGE_SIZE = 5 * 1024 * 1024
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+IMAGE_MAX_BYTES = 5 * 1024 * 1024
+IMAGE_EXTENSION_BY_TYPE = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
+ALLOWED_IMAGE_TYPES = set(IMAGE_EXTENSION_BY_TYPE)
+IMAGE_RULES = {
+    "max_bytes": IMAGE_MAX_BYTES,
+    "extension_by_type": IMAGE_EXTENSION_BY_TYPE,
+}
 
 
 @router.post("/admin/media/images", response_model=ApiResponse)
@@ -26,19 +37,13 @@ async def upload_image_api(
 ) -> JSONResponse:
     content_type = file.content_type or ""
     if content_type not in ALLOWED_IMAGE_TYPES:
-        return error_response("unsupported_image_type", status.HTTP_400_BAD_REQUEST, 1411)
+        return error_response("unsupported_image_type", status.HTTP_400_BAD_REQUEST, UNSUPPORTED_IMAGE_TYPE)
 
     content = await file.read()
-    if len(content) > MAX_IMAGE_SIZE:
-        return error_response("image_too_large", status.HTTP_400_BAD_REQUEST, 1412)
+    if len(content) > IMAGE_MAX_BYTES:
+        return error_response("image_too_large", status.HTTP_400_BAD_REQUEST, IMAGE_TOO_LARGE)
 
-    ext_map = {
-        "image/jpeg": ".jpg",
-        "image/png": ".png",
-        "image/webp": ".webp",
-        "image/gif": ".gif",
-    }
-    ext = ext_map.get(content_type, ".img")
+    ext = IMAGE_EXTENSION_BY_TYPE.get(content_type, ".img")
     filename = f"{slugify(Path(file.filename or 'image').stem)}-{len(content)}{ext}"
 
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)

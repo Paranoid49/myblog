@@ -33,7 +33,36 @@ function toEditForm(post) {
   };
 }
 
+function buildJsonRequestOptions(payload) {
+  return {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  };
+}
+
+function appendMarkdownImage(content, imageUrl) {
+  return `${content}\n\n![image](${imageUrl})\n`;
+}
+
+function getPostSuccessMessage(formId) {
+  return formId ? '文章已更新' : '文章已创建';
+}
+
+function getPublishSuccessMessage(action) {
+  return action === 'publish' ? '文章已发布' : '文章已转为草稿';
+}
+
+function buildMarkdownImportPayload(markdown) {
+  return { markdown, category_id: null, tag_ids: [] };
+}
+
+function buildPostRequestPath(formId) {
+  return formId ? `/admin/posts/${formId}` : '/admin/posts';
+}
+
 export default function useAdminPostsState() {
+  // hook 只负责文章页状态编排与 API 交互，不承载跨页面状态管理或 CMS 平台化逻辑。
   const [posts, setPosts] = useState([]);
   const [taxonomy, setTaxonomy] = useState({ categories: [], tags: [] });
   const [error, setError] = useState('');
@@ -82,21 +111,8 @@ export default function useAdminPostsState() {
 
     try {
       const payload = toPostPayload(form);
-      if (form.id) {
-        await apiRequest(`/admin/posts/${form.id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        setMessage('文章已更新');
-      } else {
-        await apiRequest('/admin/posts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        setMessage('文章已创建');
-      }
+      await apiRequest(buildPostRequestPath(form.id), buildJsonRequestOptions(payload));
+      setMessage(getPostSuccessMessage(form.id));
       resetForm();
       await loadPosts();
     } catch (e) {
@@ -113,11 +129,7 @@ export default function useAdminPostsState() {
 
     try {
       const markdown = await file.text();
-      await apiRequest('/admin/posts/import-markdown', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markdown, category_id: null, tag_ids: [] }),
-      });
+      await apiRequest('/admin/posts/import-markdown', buildJsonRequestOptions(buildMarkdownImportPayload(markdown)));
       setMessage('Markdown 导入成功');
       await loadPosts();
     } catch (e) {
@@ -154,7 +166,7 @@ export default function useAdminPostsState() {
       const body = new FormData();
       body.set('file', file);
       const data = await apiRequest('/admin/media/images', { method: 'POST', body });
-      setForm((prev) => ({ ...prev, content: `${prev.content}\n\n![image](${data.url})\n` }));
+      setForm((prev) => ({ ...prev, content: appendMarkdownImage(prev.content, data.url) }));
       setMessage('图片已插入 Markdown');
     } catch (e) {
       setError(e.message || 'upload_failed');
@@ -167,7 +179,7 @@ export default function useAdminPostsState() {
     setError('');
     try {
       await apiRequest(`/admin/posts/${postId}/${action}`, { method: 'POST' });
-      setMessage(action === 'publish' ? '文章已发布' : '文章已转为草稿');
+      setMessage(getPublishSuccessMessage(action));
       await loadPosts();
     } catch (e) {
       setError(e.message || 'publish_failed');

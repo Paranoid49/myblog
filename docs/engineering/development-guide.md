@@ -5,10 +5,15 @@
 以下改动开始前，建议先看守则文档，避免把局部问题扩成系统复杂度：
 
 - [演进与风险压制守则](./evolution-guardrails.md)
-- [哲学提分优化执行清单](./philosophy-score-optimization-checklist.md)
+- [变更边界检查清单](./change-review-checklist.md)
+- [长期守护规则](./long-term-guardrails.md)
+- [关键规则权威来源索引](./rule-authority-index.md)
+- [核心回归测试包](./core-regression-suite.md)
+- [哲学提分优化执行清单](../planning/project-philosophy-9plus-optimization-todos.md)
 
 ## 推荐开发启动方式
 
+### 全栈联调（默认推荐）
 开发时统一推荐使用：
 
 ```bash
@@ -27,6 +32,24 @@ python scripts/start_fullstack.py
 ```bash
 python scripts/start_fullstack.py --backend-port 8000 --frontend-port 5173 --no-browser
 ```
+
+### 仅后端开发
+如果当前只处理后端 API、数据库或脚本逻辑，推荐直接使用：
+
+```bash
+python scripts/start_blog.py
+```
+
+该脚本负责：
+
+1. 在 PostgreSQL 显式配置场景下按需建库
+2. 执行数据库迁移
+3. 启动 FastAPI 开发服务
+
+### 不再推荐作为主入口的脚本
+- `python scripts/run_dev.py`
+
+`run_dev.py` 仍可作为历史兼容脚本保留，但不再作为日常开发文档主入口，避免与 `start_blog.py` / `start_fullstack.py` 形成重复说法。
 
 ---
 
@@ -89,6 +112,14 @@ python scripts/start_fullstack.py --backend-port 8000 --frontend-port 5173 --no-
 ---
 
 ## 浏览器冒烟测试基线
+
+基础验证入口统一推荐：
+
+```bash
+pytest
+```
+
+如需只跑单个测试文件，再按需细化到具体文件或用例。
 
 当前建议优先保留和复用的关键浏览器路径包括：
 
