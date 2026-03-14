@@ -1,3 +1,5 @@
+import { getPostPublishAction } from './postActions';
+
 export default function AdminPostList({ posts, onEdit, onExport, onPublish, onUnpublish }) {
   return (
     <section className="panel-card">
@@ -6,24 +8,27 @@ export default function AdminPostList({ posts, onEdit, onExport, onPublish, onUn
       </div>
       {!posts.length ? <p className="muted">暂无文章</p> : null}
       <div className="admin-post-list">
-        {posts.map((post) => (
-          <article key={post.id} className="admin-post-item">
-            <div>
-              <h4>{post.title}</h4>
-              <p className="muted">slug：{post.slug}</p>
-              <p className="muted">状态：{post.published_at ? '已发布' : '草稿'}</p>
-            </div>
-            <div className="inline-actions">
-              <button type="button" className="ghost-button" onClick={() => onEdit(post)}>编辑</button>
-              <button type="button" className="ghost-button" onClick={() => onExport(post.id)}>导出</button>
-              {post.published_at ? (
-                <button type="button" className="ghost-button" onClick={() => onUnpublish(post.id)}>转草稿</button>
-              ) : (
-                <button type="button" className="primary-button" onClick={() => onPublish(post.id)}>发布</button>
-              )}
-            </div>
-          </article>
-        ))}
+        {posts.map((post) => {
+          const publishAction = getPostPublishAction(post);
+          const actionHandler = publishAction.handlerName === 'onUnpublish' ? onUnpublish : onPublish;
+
+          return (
+            <article key={post.id} className="admin-post-item">
+              <div>
+                <h4>{post.title}</h4>
+                <p className="muted">slug：{post.slug}</p>
+                <p className="muted">状态：{post.published_at ? '已发布' : '草稿'}</p>
+              </div>
+              <div className="inline-actions">
+                <button type="button" className="ghost-button" onClick={() => onEdit(post)}>编辑</button>
+                <button type="button" className="ghost-button" onClick={() => onExport(post.id)}>导出</button>
+                <button type="button" className={publishAction.variant} onClick={() => actionHandler(post.id)}>
+                  {publishAction.text}
+                </button>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

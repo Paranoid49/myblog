@@ -1,86 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiRequest } from '../../shared/api/client';
-
-const EMPTY_FILTER = { category_id: '', tag_id: '' };
-const EMPTY_FORM = { id: null, title: '', summary: '', content: '', category_id: '', tag_ids: [] };
-
-function toQuery(filter) {
-  const url = new URLSearchParams();
-  if (filter.category_id) url.set('category_id', String(filter.category_id));
-  if (filter.tag_id) url.set('tag_id', String(filter.tag_id));
-  const query = url.toString();
-  return query ? `?${query}` : '';
-}
-
-function toPostPayload(form) {
-  return {
-    title: form.title,
-    summary: form.summary || null,
-    content: form.content,
-    category_id: form.category_id ? Number(form.category_id) : null,
-    tag_ids: form.tag_ids.map((id) => Number(id)),
-  };
-}
-
-function toEditForm(post) {
-  return {
-    id: post.id,
-    title: post.title || '',
-    summary: post.summary || '',
-    content: post.content || '',
-    category_id: post.category_id ? String(post.category_id) : '',
-    tag_ids: (post.tag_ids || []).map((id) => Number(id)),
-  };
-}
-
-function buildJsonRequestOptions(payload) {
-  return {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  };
-}
-
-function appendMarkdownImage(content, imageUrl) {
-  return `${content}\n\n![image](${imageUrl})\n`;
-}
-
-function getPostSuccessMessage(formId) {
-  return formId ? '文章已更新' : '文章已创建';
-}
-
-
-function buildMarkdownImportPayload(markdown) {
-  return { markdown, category_id: null, tag_ids: [] };
-}
-
-function buildPostRequestPath(formId) {
-  return formId ? `/admin/posts/${formId}` : '/admin/posts';
-}
-
-function resetFeedback(setError, setMessage) {
-  setError('');
-  setMessage('');
-}
-
-function setFailure(setError, error, fallback) {
-  setError(error.message || fallback);
-}
-
-async function runWithFeedback(action, { setError, setMessage, successMessage, failureMessage }) {
-  resetFeedback(setError, setMessage);
-
-  try {
-    await action();
-    if (successMessage) {
-      setMessage(successMessage);
-    }
-    return true;
-  } catch (error) {
-    setFailure(setError, error, failureMessage);
-    return false;
-  }
-}
+import {
+  EMPTY_FILTER,
+  EMPTY_FORM,
+  appendMarkdownImage,
+  buildJsonRequestOptions,
+  buildMarkdownImportPayload,
+  buildPostRequestPath,
+  getPostSuccessMessage,
+  runWithFeedback,
+  toEditForm,
+  toPostPayload,
+  toQuery,
+  toggleTagIds,
+} from './useAdminPostsState.helpers';
 
 export default function useAdminPostsState() {
   // hook 只负责文章页状态编排与 API 交互，不承载跨页面状态管理或 CMS 平台化逻辑。
@@ -250,12 +183,7 @@ export default function useAdminPostsState() {
   }
 
   function handleToggleTag(tagId, checked) {
-    setForm((prev) => {
-      const next = new Set(prev.tag_ids.map((id) => Number(id)));
-      if (checked) next.add(Number(tagId));
-      else next.delete(Number(tagId));
-      return { ...prev, tag_ids: [...next] };
-    });
+    setForm((prev) => ({ ...prev, tag_ids: toggleTagIds(prev.tag_ids, tagId, checked) }));
   }
 
   return {
