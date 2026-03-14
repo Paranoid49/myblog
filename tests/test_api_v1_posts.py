@@ -1,4 +1,4 @@
-from app.models import Category
+from app.models import Category, Post, Tag
 
 
 def test_api_list_posts_returns_published_only(client, initialized_site, admin_user, seeded_post, db_session) -> None:
@@ -178,6 +178,25 @@ def test_api_filter_admin_posts_by_category(client, logged_in_admin, seeded_post
     assert len(payload["data"]) >= 1
 
 
+def test_api_filter_admin_posts_by_tag(client, logged_in_admin, db_session) -> None:
+    category = Category(name="Python", slug="python")
+    fastapi_tag = Tag(name="FastAPI", slug="fastapi")
+    react_tag = Tag(name="React", slug="react")
+    matched_post = Post(title="Matched", slug="matched", summary="S", content="C", category=category)
+    matched_post.tags = [fastapi_tag]
+    unmatched_post = Post(title="Unmatched", slug="unmatched", summary="S", content="C", category=category)
+    unmatched_post.tags = [react_tag]
+    db_session.add_all([category, fastapi_tag, react_tag, matched_post, unmatched_post])
+    db_session.commit()
+
+    response = client.get(f"/api/v1/admin/posts?tag_id={fastapi_tag.id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["code"] == 0
+    assert [post["slug"] for post in payload["data"]] == ["matched"]
+
+
 def test_api_get_category_posts_success(client, initialized_site, admin_user, seeded_post, db_session) -> None:
     seeded_post.published_at = seeded_post.created_at
     db_session.commit()
@@ -223,6 +242,38 @@ def test_api_update_admin_post_success(client, logged_in_admin, seeded_post) -> 
     assert payload["data"]["content"] == "# Updated Markdown"
 
 
+def test_api_update_admin_post_returns_404_for_missing_post(client, logged_in_admin) -> None:
+    response = client.post(
+        "/api/v1/admin/posts/999999",
+        json={
+            "title": "Updated Title",
+            "summary": "Updated Summary",
+            "content": "# Updated Markdown",
+            "category_id": None,
+            "tag_ids": [],
+        },
+    )
+
+    assert response.status_code == 404
+    payload = response.json()
+    assert payload["code"] == 1404
+
+
+def test_api_create_admin_post_rejects_blank_title(client, logged_in_admin) -> None:
+    response = client.post(
+        "/api/v1/admin/posts",
+        json={
+            "title": "   ",
+            "summary": "摘要",
+            "content": "正文",
+            "category_id": None,
+            "tag_ids": [],
+        },
+    )
+
+    assert response.status_code == 422
+
+
 def test_api_import_markdown_success(client, logged_in_admin) -> None:
     response = client.post(
         "/api/v1/admin/posts/import-markdown",
@@ -247,6 +298,27 @@ def test_api_export_markdown_success(client, logged_in_admin, seeded_post) -> No
     assert payload["code"] == 0
     assert payload["data"]["filename"].endswith(".md")
     assert payload["data"]["markdown"].startswith("# ")
+
+
+def test_api_export_markdown_returns_404_for_missing_post(client, logged_in_admin) -> None:
+    response = client.get("/api/v1/admin/posts/999999/export-markdown")
+
+    assert response.status_code == 404
+    payload = response.json()
+    assert payload["code"] == 1404
+
+
+def test_api_import_markdown_rejects_blank_markdown(client, logged_in_admin) -> None:
+    response = client.post(
+        "/api/v1/admin/posts/import-markdown",
+        json={
+            "markdown": "   ",
+            "category_id": None,
+            "tag_ids": [],
+        },
+    )
+
+    assert response.status_code == 422
 
 
 def test_api_upload_image_success(client, logged_in_admin) -> None:

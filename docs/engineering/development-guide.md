@@ -2,14 +2,16 @@
 
 ## 开发前先读
 
-以下改动开始前，建议先看守则文档，避免把局部问题扩成系统复杂度：
+日常开发先以本文作为工程入口；如果还不确定该看哪份文档，先回到 [`docs/README.md`](../README.md)。
 
-- [演进与风险压制守则](./evolution-guardrails.md)
-- [变更边界检查清单](./change-review-checklist.md)
-- [长期守护规则](./long-term-guardrails.md)
-- [关键规则权威来源索引](./rule-authority-index.md)
-- [核心回归测试包](./core-regression-suite.md)
-- [哲学提分优化执行清单](../planning/project-philosophy-9plus-optimization-todos.md)
+按目的进入：
+
+- 改动前做边界判断： [变更边界检查清单](./change-review-checklist.md)
+- 需要查某类规则真正该去哪改： [关键规则权威来源索引](./rule-authority-index.md)
+- 需要理解演进中的高风险方向： [演进与风险压制守则](./evolution-guardrails.md)
+- 需要长期保持治理基线： [长期守护规则](./long-term-guardrails.md)
+- 需要回归基线： [核心回归测试包](./core-regression-suite.md)
+- 需要查看阶段性治理待办： [哲学提分优化执行清单](../planning/project-philosophy-9plus-optimization-todos.md)
 
 ## 推荐开发启动方式
 

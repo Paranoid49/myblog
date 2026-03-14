@@ -24,7 +24,8 @@ export default function AdminPostsPage() {
     importMarkdown,
     exportMarkdown,
     uploadImage,
-    togglePublish,
+    publishPost,
+    unpublishPost,
     applyFilter,
     handleFieldChange,
     handleToggleTag,
@@ -51,7 +52,7 @@ export default function AdminPostsPage() {
 
       <AdminPostFilters filter={filter} taxonomy={taxonomy} onApplyFilter={applyFilter} />
 
-      <AdminPostList posts={posts} onEdit={fillForEdit} onExport={exportMarkdown} onTogglePublish={togglePublish} />
+      <AdminPostList posts={posts} onEdit={fillForEdit} onExport={exportMarkdown} onPublish={publishPost} onUnpublish={unpublishPost} />
     </AdminLayout>
   );
 }

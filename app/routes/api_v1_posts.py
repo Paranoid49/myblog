@@ -2,20 +2,21 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.deps import get_current_admin
 from app.core.error_codes import POST_NOT_FOUND
 from app.core.hook_bus import hook_bus
-from app.models import Post, Tag, User
+from app.models import Post, User
 from app.schemas.api_response import ApiResponse, error_response, ok_response
-from app.schemas.post import PostCreate
-from app.services.admin_post_service import get_tags_by_ids, resolve_category_id
+from app.schemas.post import AdminPostCreateRequest, AdminPostUpdateRequest, ImportMarkdownRequest
 from app.services.post_service import (
-    build_post,
+    build_admin_post_list_query,
+    build_markdown_export,
+    build_post_create_payload,
+    build_post_from_import_markdown,
+    create_post,
     get_post_by_slug,
     list_published_posts,
     publish_post,
@@ -26,51 +27,6 @@ from app.services.post_service import (
 router = APIRouter(prefix="/api/v1", tags=["api-v1-posts"])
 
 # 文章模块保持“前台读取 + 后台写作闭环”边界，不在这里继续承载平台化能力。
-
-# request model / 辅助函数
-
-
-class AdminPostCreateRequest(BaseModel):
-    title: str
-    summary: str | None = None
-    content: str
-    category_id: int | None = None
-    tag_ids: list[int] = Field(default_factory=list)
-
-    @field_validator("title", "content")
-    @classmethod
-    def _must_not_be_blank(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("must_not_be_blank")
-        return value
-
-
-class AdminPostUpdateRequest(BaseModel):
-    title: str
-    summary: str | None = None
-    content: str
-    category_id: int | None = None
-    tag_ids: list[int] = Field(default_factory=list)
-
-    @field_validator("title", "content")
-    @classmethod
-    def _must_not_be_blank(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("must_not_be_blank")
-        return value
-
-
-class ImportMarkdownRequest(BaseModel):
-    markdown: str
-    category_id: int | None = None
-    tag_ids: list[int] = Field(default_factory=list)
-
-    @field_validator("markdown")
-    @classmethod
-    def _markdown_not_blank(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("must_not_be_blank")
-        return value
 
 
 def _serialize_post(post: Post) -> dict:
@@ -89,46 +45,6 @@ def _serialize_post(post: Post) -> dict:
     }
 
 
-def _extract_title(markdown: str) -> str:
-    for line in markdown.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("# "):
-            return stripped[2:].strip() or "Untitled"
-    for line in markdown.splitlines():
-        stripped = line.strip()
-        if stripped:
-            return stripped[:80]
-    return "Untitled"
-
-
-def _build_create_payload(
-    db: Session,
-    *,
-    title: str,
-    summary: str | None,
-    content: str,
-    category_id: int | None,
-    tag_ids: list[int],
-) -> tuple[PostCreate, list[Tag]]:
-    data = PostCreate(
-        title=title,
-        summary=summary,
-        content=content,
-        category_id=resolve_category_id(db, category_id),
-        tag_ids=tag_ids,
-    )
-    tags = get_tags_by_ids(db, data.tag_ids) if data.tag_ids else []
-    return data, tags
-
-
-def _create_post_from_payload(db: Session, data: PostCreate, tags: list[Tag]) -> Post:
-    existing_slugs = set(db.execute(select(Post.slug)).scalars().all())
-    post = build_post(data, existing_slugs=existing_slugs)
-    if tags:
-        post.tags = tags
-    return post
-
-
 def _save_post(db: Session, post: Post, *, event_name: str) -> JSONResponse:
     db.add(post)
     db.commit()
@@ -142,15 +58,6 @@ def _commit_post_update(db: Session, post: Post, *, event_name: str) -> JSONResp
     db.refresh(post)
     hook_bus.emit(event_name, {"post_id": post.id, "slug": post.slug})
     return ok_response(_serialize_post(post))
-
-
-def _build_admin_post_query(category_id: int | None = None, tag_id: int | None = None):
-    stmt = select(Post).order_by(Post.created_at.desc())
-    if category_id is not None:
-        stmt = stmt.where(Post.category_id == category_id)
-    if tag_id is not None:
-        stmt = stmt.where(Post.tags.any(Tag.id == tag_id))
-    return stmt
 
 
 def _get_post_or_404(db: Session, post_id: int) -> Post | JSONResponse:
@@ -187,7 +94,7 @@ def list_admin_posts_api(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    posts = list(db.execute(_build_admin_post_query(category_id, tag_id)).scalars().all())
+    posts = list(db.execute(build_admin_post_list_query(category_id, tag_id)).scalars().all())
     return ok_response([_serialize_post(post) for post in posts])
 
 
@@ -197,7 +104,7 @@ def create_admin_post_api(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    data, tags = _build_create_payload(
+    data, tags = build_post_create_payload(
         db,
         title=payload.title,
         summary=payload.summary,
@@ -205,7 +112,7 @@ def create_admin_post_api(
         category_id=payload.category_id,
         tag_ids=payload.tag_ids,
     )
-    post = _create_post_from_payload(db, data, tags)
+    post = create_post(db, data, tags)
     return _save_post(db, post, event_name="post.created")
 
 
@@ -218,15 +125,8 @@ def import_markdown_post_api(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    data, tags = _build_create_payload(
-        db,
-        title=_extract_title(payload.markdown),
-        summary=None,
-        content=payload.markdown,
-        category_id=payload.category_id,
-        tag_ids=payload.tag_ids,
-    )
-    post = _create_post_from_payload(db, data, tags)
+    data, tags = build_post_from_import_markdown(db, payload)
+    post = create_post(db, data, tags)
     return _save_post(db, post, event_name="post.created")
 
 
@@ -241,7 +141,7 @@ def update_admin_post_api(
     if isinstance(post, JSONResponse):
         return post
 
-    data, tags = _build_create_payload(
+    data, tags = build_post_create_payload(
         db,
         title=payload.title,
         summary=payload.summary,
@@ -263,8 +163,7 @@ def export_markdown_post_api(
     if isinstance(post, JSONResponse):
         return post
 
-    markdown = f"# {post.title}\n\n{post.content}"
-    return ok_response({"filename": f"{post.slug}.md", "markdown": markdown})
+    return ok_response(build_markdown_export(post))
 
 
 # publish workflow

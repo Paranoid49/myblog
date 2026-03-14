@@ -1,4 +1,4 @@
-export default function AdminPostList({ posts, onEdit, onExport, onTogglePublish }) {
+export default function AdminPostList({ posts, onEdit, onExport, onPublish, onUnpublish }) {
   return (
     <section className="panel-card">
       <div className="section-head">
@@ -16,8 +16,11 @@ export default function AdminPostList({ posts, onEdit, onExport, onTogglePublish
             <div className="inline-actions">
               <button type="button" className="ghost-button" onClick={() => onEdit(post)}>编辑</button>
               <button type="button" className="ghost-button" onClick={() => onExport(post.id)}>导出</button>
-              <button type="button" className="primary-button" onClick={() => onTogglePublish(post.id, 'publish')}>发布</button>
-              <button type="button" className="ghost-button" onClick={() => onTogglePublish(post.id, 'unpublish')}>转草稿</button>
+              {post.published_at ? (
+                <button type="button" className="ghost-button" onClick={() => onUnpublish(post.id)}>转草稿</button>
+              ) : (
+                <button type="button" className="primary-button" onClick={() => onPublish(post.id)}>发布</button>
+              )}
             </div>
           </article>
         ))}

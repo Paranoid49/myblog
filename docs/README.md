@@ -38,10 +38,14 @@
 - `api/extension-api-v1.md`
 
 ### 我想改代码但不想越界
-读：
-- `engineering/change-review-checklist.md`
-- `engineering/evolution-guardrails.md`
-- `engineering/long-term-guardrails.md`
+先读：
+- `engineering/development-guide.md`
+
+再按目的进入：
+- 改动前边界判断：`engineering/change-review-checklist.md`
+- 演进风险压制：`engineering/evolution-guardrails.md`
+- 长期保持治理基线：`engineering/long-term-guardrails.md`
+- 不确定规则该去哪改：`engineering/rule-authority-index.md`
 
 ### 我想跑关键回归
 读：

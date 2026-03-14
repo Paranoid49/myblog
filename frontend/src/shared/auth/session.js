@@ -1,7 +1,16 @@
 const STORAGE_KEY = 'myblog_user';
 const LOGIN_PATH = '/admin/login';
+const ADMIN_HOME_PATH = '/admin';
+
+function canUseLocalStorage() {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+}
 
 export function getStoredUserSnapshot() {
+  if (!canUseLocalStorage()) {
+    return null;
+  }
+
   try {
     const value = window.localStorage.getItem(STORAGE_KEY);
     return value ? JSON.parse(value) : null;
@@ -11,15 +20,45 @@ export function getStoredUserSnapshot() {
 }
 
 export function setStoredUserSnapshot(user) {
+  if (!canUseLocalStorage()) {
+    return;
+  }
+
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
 }
 
 export function clearStoredUserSnapshot() {
+  if (!canUseLocalStorage()) {
+    return;
+  }
+
   window.localStorage.removeItem(STORAGE_KEY);
 }
 
 export function hasStoredUserSnapshot() {
   return Boolean(getStoredUserSnapshot());
+}
+
+export function getAdminEntryPath() {
+  return hasStoredUserSnapshot() ? ADMIN_HOME_PATH : LOGIN_PATH;
+}
+
+export function getLoginRedirectPath(locationState) {
+  return locationState?.from || ADMIN_HOME_PATH;
+}
+
+export function getLoginNavigationState(from) {
+  return from ? { from } : undefined;
+}
+
+export function loginWithUserSnapshot({ navigate, user, redirectTo }) {
+  setStoredUserSnapshot(user);
+  navigate(redirectTo || ADMIN_HOME_PATH, { replace: true });
+}
+
+export function logoutWithUserSnapshot({ navigate }) {
+  clearStoredUserSnapshot();
+  navigate(LOGIN_PATH, { replace: true });
 }
 
 export function redirectToLoginAfterUnauthorized() {

@@ -1,11 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { hasStoredUserSnapshot } from '../auth/session';
+import { getAdminEntryPath } from '../auth/session';
 import { useTheme } from '../theme/ThemeProvider';
 
 export default function PublicLayout({ title, description, children }) {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
-  const hasUserSnapshot = hasStoredUserSnapshot();
 
   const isActive = (path) => location.pathname === path;
 
@@ -24,7 +23,7 @@ export default function PublicLayout({ title, description, children }) {
             <Link to="/author" className={`nav-link ${isActive('/author') ? 'active' : ''}`}>
               作者
             </Link>
-            <Link to={hasUserSnapshot ? '/admin' : '/admin/login'} className="nav-link">
+            <Link to={getAdminEntryPath()} className="nav-link">
               后台
             </Link>
             <button type="button" className="ghost-button" onClick={toggleTheme}>

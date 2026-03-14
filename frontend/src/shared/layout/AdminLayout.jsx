@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { apiRequest } from '../api/client';
-import { clearStoredUserSnapshot, getStoredUserSnapshot } from '../auth/session';
+import { getStoredUserSnapshot, logoutWithUserSnapshot } from '../auth/session';
 
 export default function AdminLayout({ title, description, navigate, children }) {
   const user = getStoredUserSnapshot();
@@ -12,8 +12,7 @@ export default function AdminLayout({ title, description, navigate, children }) 
     try {
       await apiRequest('/auth/logout', { method: 'POST' });
     } finally {
-      clearStoredUserSnapshot();
-      navigate('/admin/login', { replace: true });
+      logoutWithUserSnapshot({ navigate });
     }
   }
 

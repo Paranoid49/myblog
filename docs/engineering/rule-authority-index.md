@@ -4,6 +4,12 @@
 
 ## 目标
 
+本索引是“某类规则该去哪看、去哪改”的收口入口，不替代日常开发入口与改动前检查：
+
+- 日常开发先看 `docs/engineering/development-guide.md`
+- 改动前边界判断先看 `docs/engineering/change-review-checklist.md`
+- 长期治理约束再看 `docs/engineering/long-term-guardrails.md`
+
 本索引用于快速回答：
 
 > 某类规则当前应该去哪里看、去哪里改？

@@ -13,6 +13,9 @@
 进行较大改动前，建议先配合阅读：
 
 - `docs/engineering/change-review-checklist.md`
+- `docs/engineering/rule-authority-index.md`
+
+如果只是找日常开发入口，先回到 `docs/engineering/development-guide.md`；本文只负责说明演进中的高风险方向。
 
 本守则关注以下五类高风险方向：
 

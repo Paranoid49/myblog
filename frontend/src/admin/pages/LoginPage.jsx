@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../shared/api/client';
-import { hasStoredUserSnapshot, setStoredUserSnapshot } from '../../shared/auth/session';
+import { getLoginRedirectPath, hasStoredUserSnapshot, loginWithUserSnapshot } from '../../shared/auth/session';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('admin');
@@ -11,7 +11,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const redirectTo = location.state?.from || '/admin';
+  const redirectTo = getLoginRedirectPath(location.state);
   const hasUserSnapshot = hasStoredUserSnapshot();
 
   if (hasUserSnapshot) {
@@ -33,8 +33,7 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: form.toString(),
       });
-      setStoredUserSnapshot(data);
-      navigate(redirectTo, { replace: true });
+      loginWithUserSnapshot({ navigate, user: data, redirectTo });
     } catch (e) {
       setError(e.message || 'login_failed');
     } finally {

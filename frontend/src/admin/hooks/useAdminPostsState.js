@@ -49,9 +49,6 @@ function getPostSuccessMessage(formId) {
   return formId ? '文章已更新' : '文章已创建';
 }
 
-function getPublishSuccessMessage(action) {
-  return action === 'publish' ? '文章已发布' : '文章已转为草稿';
-}
 
 function buildMarkdownImportPayload(markdown) {
   return { markdown, category_id: null, tag_ids: [] };
@@ -220,19 +217,27 @@ export default function useAdminPostsState() {
     }
   }
 
-  async function togglePublish(postId, action) {
+  async function updatePostPublishState(postId, action, successMessage) {
     const succeeded = await runWithFeedback(
       () => apiRequest(`/admin/posts/${postId}/${action}`, { method: 'POST' }),
       {
         setError,
         setMessage,
-        successMessage: getPublishSuccessMessage(action),
+        successMessage,
         failureMessage: 'publish_failed',
       },
     );
 
     if (!succeeded) return;
     await loadPosts();
+  }
+
+  function publishPost(postId) {
+    return updatePostPublishState(postId, 'publish', '文章已发布');
+  }
+
+  function unpublishPost(postId) {
+    return updatePostPublishState(postId, 'unpublish', '文章已转为草稿');
   }
 
   async function applyFilter(nextFilter) {
@@ -269,7 +274,8 @@ export default function useAdminPostsState() {
     importMarkdown,
     exportMarkdown,
     uploadImage,
-    togglePublish,
+    publishPost,
+    unpublishPost,
     applyFilter,
     handleFieldChange,
     handleToggleTag,
