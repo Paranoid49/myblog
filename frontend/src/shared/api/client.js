@@ -1,4 +1,4 @@
-import { clearStoredUser } from '../auth/session';
+import { redirectToLoginAfterUnauthorized } from '../auth/session';
 
 function createApiError({ status, code, message }) {
   const error = new Error(message || `http_${status}`);
@@ -13,11 +13,7 @@ function handleUnauthorized(error) {
     return;
   }
 
-  clearStoredUser();
-
-  if (typeof window !== 'undefined' && window.location.pathname !== '/admin/login') {
-    window.location.assign('/admin/login');
-  }
+  redirectToLoginAfterUnauthorized();
 }
 
 export async function apiRequest(path, options = {}) {

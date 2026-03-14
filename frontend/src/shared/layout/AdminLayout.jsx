@@ -1,9 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
 import { apiRequest } from '../api/client';
-import { clearStoredUser, getStoredUser } from '../auth/session';
+import { clearStoredUserSnapshot, getStoredUserSnapshot } from '../auth/session';
 
 export default function AdminLayout({ title, description, navigate, children }) {
-  const user = getStoredUser();
+  const user = getStoredUserSnapshot();
   const location = useLocation();
 
   const isActive = (path) => location.pathname === path;
@@ -12,7 +12,7 @@ export default function AdminLayout({ title, description, navigate, children }) 
     try {
       await apiRequest('/auth/logout', { method: 'POST' });
     } finally {
-      clearStoredUser();
+      clearStoredUserSnapshot();
       navigate('/admin/login', { replace: true });
     }
   }

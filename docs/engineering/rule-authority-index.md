@@ -103,7 +103,44 @@
 
 ---
 
-## 7. 当前真相文档入口
+## 7. SiteSettings 与作者资料边界
+
+### 权威来源
+- 代码：
+  - `app/models/site_settings.py`
+  - `app/routes/api_v1_author.py`
+  - `app/routes/api_v1_setup.py`
+- 文档：
+  - `docs/architecture/architecture-and-boundaries.md`
+  - `docs/engineering/long-term-guardrails.md`
+
+### 说明
+- `SiteSettings` 只承载站点级基础设置与作者基础资料最小集合
+- setup 与 author 修改同一份站点设置时，以 `site_settings.py` 的字段边界为准
+- 若新增字段不属于站点基础设置，默认不应先塞进 `SiteSettings`
+
+---
+
+## 8. taxonomy 公开查询与创建规则
+
+### 权威来源
+- 代码：
+  - `app/routes/api_v1_taxonomy.py`
+  - `app/services/taxonomy_service.py`
+  - `app/services/admin_post_service.py`
+  - `app/services/post_service.py`（slug 规则）
+- 文档：
+  - `docs/api/api-v1-contract.md`
+  - `docs/engineering/long-term-guardrails.md`
+
+### 说明
+- taxonomy 公开查询、后台创建与 slug 命名规则应优先回到上述位置核对
+- 分类/标签创建冲突、公开查询返回结构、slug 生成不要在多处各自解释一套
+- 若规则发生变化，优先更新权威来源，而不是补第二份平行说明
+
+---
+
+## 9. 当前真相文档入口
 
 ### 权威来源
 - `docs/README.md`

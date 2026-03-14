@@ -101,7 +101,7 @@ def _extract_title(markdown: str) -> str:
     return "Untitled"
 
 
-def _build_post_create(
+def _build_create_payload(
     db: Session,
     *,
     title: str,
@@ -109,21 +109,23 @@ def _build_post_create(
     content: str,
     category_id: int | None,
     tag_ids: list[int],
-) -> PostCreate:
-    return PostCreate(
+) -> tuple[PostCreate, list[Tag]]:
+    data = PostCreate(
         title=title,
         summary=summary,
         content=content,
         category_id=resolve_category_id(db, category_id),
         tag_ids=tag_ids,
     )
+    tags = get_tags_by_ids(db, data.tag_ids) if data.tag_ids else []
+    return data, tags
 
 
-def _create_post_entity(db: Session, data: PostCreate) -> Post:
+def _create_post_from_payload(db: Session, data: PostCreate, tags: list[Tag]) -> Post:
     existing_slugs = set(db.execute(select(Post.slug)).scalars().all())
     post = build_post(data, existing_slugs=existing_slugs)
-    if data.tag_ids:
-        post.tags = get_tags_by_ids(db, data.tag_ids)
+    if tags:
+        post.tags = tags
     return post
 
 
@@ -140,25 +142,6 @@ def _commit_post_update(db: Session, post: Post, *, event_name: str) -> JSONResp
     db.refresh(post)
     hook_bus.emit(event_name, {"post_id": post.id, "slug": post.slug})
     return ok_response(_serialize_post(post))
-
-
-def _create_post_data(
-    db: Session,
-    *,
-    title: str,
-    summary: str | None,
-    content: str,
-    category_id: int | None,
-    tag_ids: list[int],
-) -> PostCreate:
-    return _build_post_create(
-        db,
-        title=title,
-        summary=summary,
-        content=content,
-        category_id=category_id,
-        tag_ids=tag_ids,
-    )
 
 
 def _build_admin_post_query(category_id: int | None = None, tag_id: int | None = None):
@@ -214,7 +197,7 @@ def create_admin_post_api(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    data = _create_post_data(
+    data, tags = _build_create_payload(
         db,
         title=payload.title,
         summary=payload.summary,
@@ -222,7 +205,7 @@ def create_admin_post_api(
         category_id=payload.category_id,
         tag_ids=payload.tag_ids,
     )
-    post = _create_post_entity(db, data)
+    post = _create_post_from_payload(db, data, tags)
     return _save_post(db, post, event_name="post.created")
 
 
@@ -235,7 +218,7 @@ def import_markdown_post_api(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    data = _create_post_data(
+    data, tags = _build_create_payload(
         db,
         title=_extract_title(payload.markdown),
         summary=None,
@@ -243,7 +226,7 @@ def import_markdown_post_api(
         category_id=payload.category_id,
         tag_ids=payload.tag_ids,
     )
-    post = _create_post_entity(db, data)
+    post = _create_post_from_payload(db, data, tags)
     return _save_post(db, post, event_name="post.created")
 
 
@@ -258,7 +241,7 @@ def update_admin_post_api(
     if isinstance(post, JSONResponse):
         return post
 
-    data = _create_post_data(
+    data, tags = _build_create_payload(
         db,
         title=payload.title,
         summary=payload.summary,
@@ -266,7 +249,6 @@ def update_admin_post_api(
         category_id=payload.category_id,
         tag_ids=payload.tag_ids,
     )
-    tags = get_tags_by_ids(db, data.tag_ids)
     update_post(post, data, tags)
     return _commit_post_update(db, post, event_name="post.updated")
 

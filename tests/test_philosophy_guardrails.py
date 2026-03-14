@@ -11,9 +11,12 @@ from app.core.error_codes import (
     SETUP_PASSWORD_MISMATCH,
 )
 from app.main import app
+from app.models.site_settings import SiteSettings
 from app.routes.api_v1_auth import router as auth_router
 from app.routes.api_v1_media import IMAGE_EXTENSION_BY_TYPE, IMAGE_MAX_BYTES, IMAGE_RULES
+from app.routes.api_v1_posts import router as posts_router
 from app.routes.api_v1_setup import router as setup_router
+from app.routes.api_v1_taxonomy import router as taxonomy_router
 from app.schemas.api_response import error_response, ok_response
 from app.services.setup_service import clear_initialized_cache
 
@@ -122,7 +125,66 @@ def test_setup_error_codes_keep_single_authority() -> None:
     assert SETUP_ALREADY_INITIALIZED == 2004
 
 
+def test_site_settings_keeps_minimal_boundary_fields() -> None:
+    assert SiteSettings.__tablename__ == 'site_settings'
+    field_names = set(SiteSettings.__table__.columns.keys())
+    assert field_names == {
+        'id',
+        'blog_title',
+        'author_name',
+        'author_bio',
+        'author_email',
+        'author_avatar',
+        'author_link',
+        'created_at',
+        'updated_at',
+    }
+
+
 def test_main_app_keeps_auth_router_registered() -> None:
     paths = {route.path for route in app.routes}
     assert "/api/v1/auth/login" in paths
     assert "/api/v1/auth/logout" in paths
+
+
+def test_posts_router_keeps_admin_and_public_boundaries_registered() -> None:
+    post_paths = {route.path for route in posts_router.routes}
+    assert '/api/v1/posts' in post_paths
+    assert '/api/v1/posts/{slug}' in post_paths
+    assert '/api/v1/admin/posts' in post_paths
+    assert '/api/v1/admin/posts/import-markdown' in post_paths
+    assert '/api/v1/admin/posts/{post_id}/publish' in post_paths
+    assert '/api/v1/admin/posts/{post_id}/unpublish' in post_paths
+
+
+def test_taxonomy_router_keeps_public_query_and_admin_create_boundaries() -> None:
+    taxonomy_paths = {route.path for route in taxonomy_router.routes}
+    assert '/api/v1/categories/{slug}' in taxonomy_paths
+    assert '/api/v1/tags/{slug}' in taxonomy_paths
+    assert '/api/v1/taxonomy' in taxonomy_paths
+    assert '/api/v1/admin/categories' in taxonomy_paths
+    assert '/api/v1/admin/tags' in taxonomy_paths
+
+
+def test_core_regression_suite_keeps_high_value_commands_documented() -> None:
+    content = Path('docs/engineering/core-regression-suite.md').read_text(encoding='utf-8')
+    assert 'tests/test_philosophy_guardrails.py' in content
+    assert 'tests/test_api_v1_auth.py' in content
+    assert 'tests/test_api_v1_posts.py' in content
+    assert 'tests/test_admin_posts.py' in content
+    assert 'tests/test_hook_bus.py' in content
+    assert 'tests/test_extension_loader.py' in content
+    assert 'tests/test_database_provider.py' in content
+
+
+def test_docs_readme_keeps_single_source_document_governance() -> None:
+    content = Path('docs/README.md').read_text(encoding='utf-8')
+    assert '新增文档前，先判断现有文档是否可以补充' in content
+    assert '`planning/` 只保留当前仍在执行或仍需持续维护的计划文档' in content
+
+
+def test_long_term_guardrails_keep_hotspot_monitoring_targets_documented() -> None:
+    content = Path('docs/engineering/long-term-guardrails.md').read_text(encoding='utf-8')
+    assert 'app/routes/api_v1_posts.py' in content
+    assert 'frontend/src/admin/hooks/useAdminPostsState.js' in content
+    assert '触发收口' in content

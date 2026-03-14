@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../shared/api/client';
-import { setStoredUser } from '../../shared/auth/session';
+import { setStoredUserSnapshot } from '../../shared/auth/session';
 
 export default function SetupPage() {
   const [loading, setLoading] = useState(true);
@@ -45,7 +45,7 @@ export default function SetupPage() {
         }),
         headers: { 'Content-Type': 'application/json' },
       });
-      setStoredUser({ user_id: data.user_id, username: data.username });
+      setStoredUserSnapshot({ user_id: data.user_id, username: data.username });
       navigate('/admin', { replace: true });
     } catch (e) {
       setError(e.message || 'setup_failed');

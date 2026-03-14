@@ -1,11 +1,11 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { hasStoredUser } from './session';
+import { hasStoredUserSnapshot } from './session';
 
 export default function AuthGuard({ children }) {
   const location = useLocation();
-  const isLoggedIn = hasStoredUser();
+  const hasUserSnapshot = hasStoredUserSnapshot();
 
-  if (!isLoggedIn) {
+  if (!hasUserSnapshot) {
     return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
   }
 

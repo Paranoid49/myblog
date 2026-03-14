@@ -61,6 +61,30 @@ function buildPostRequestPath(formId) {
   return formId ? `/admin/posts/${formId}` : '/admin/posts';
 }
 
+function resetFeedback(setError, setMessage) {
+  setError('');
+  setMessage('');
+}
+
+function setFailure(setError, error, fallback) {
+  setError(error.message || fallback);
+}
+
+async function runWithFeedback(action, { setError, setMessage, successMessage, failureMessage }) {
+  resetFeedback(setError, setMessage);
+
+  try {
+    await action();
+    if (successMessage) {
+      setMessage(successMessage);
+    }
+    return true;
+  } catch (error) {
+    setFailure(setError, error, failureMessage);
+    return false;
+  }
+}
+
 export default function useAdminPostsState() {
   // hook 只负责文章页状态编排与 API 交互，不承载跨页面状态管理或 CMS 平台化逻辑。
   const [posts, setPosts] = useState([]);
@@ -95,9 +119,13 @@ export default function useAdminPostsState() {
     setError('');
   }
 
+  async function reloadEditorData(nextFilter = filter) {
+    await Promise.all([loadTaxonomy(), loadPosts(nextFilter)]);
+  }
+
   async function initialize() {
     setError('');
-    await Promise.all([loadTaxonomy(), loadPosts()]);
+    await reloadEditorData();
   }
 
   useEffect(() => {
@@ -106,34 +134,42 @@ export default function useAdminPostsState() {
 
   async function submitForm(event) {
     event.preventDefault();
-    setError('');
-    setMessage('');
+    const payload = toPostPayload(form);
+    const succeeded = await runWithFeedback(
+      () => apiRequest(buildPostRequestPath(form.id), buildJsonRequestOptions(payload)),
+      {
+        setError,
+        setMessage,
+        successMessage: getPostSuccessMessage(form.id),
+        failureMessage: 'submit_failed',
+      },
+    );
 
-    try {
-      const payload = toPostPayload(form);
-      await apiRequest(buildPostRequestPath(form.id), buildJsonRequestOptions(payload));
-      setMessage(getPostSuccessMessage(form.id));
-      resetForm();
-      await loadPosts();
-    } catch (e) {
-      setError(e.message || 'submit_failed');
-    }
+    if (!succeeded) return;
+
+    resetForm();
+    await loadPosts();
   }
 
   async function importMarkdown(event) {
     event.preventDefault();
-    setError('');
-    setMessage('');
     const file = event.target.files?.[0];
     if (!file) return;
 
     try {
       const markdown = await file.text();
-      await apiRequest('/admin/posts/import-markdown', buildJsonRequestOptions(buildMarkdownImportPayload(markdown)));
-      setMessage('Markdown 导入成功');
+      const succeeded = await runWithFeedback(
+        () => apiRequest('/admin/posts/import-markdown', buildJsonRequestOptions(buildMarkdownImportPayload(markdown))),
+        {
+          setError,
+          setMessage,
+          successMessage: 'Markdown 导入成功',
+          failureMessage: 'import_failed',
+        },
+      );
+
+      if (!succeeded) return;
       await loadPosts();
-    } catch (e) {
-      setError(e.message || 'import_failed');
     } finally {
       event.target.value = '';
     }
@@ -160,30 +196,43 @@ export default function useAdminPostsState() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setError('');
-    setMessage('');
     try {
       const body = new FormData();
       body.set('file', file);
-      const data = await apiRequest('/admin/media/images', { method: 'POST', body });
-      setForm((prev) => ({ ...prev, content: appendMarkdownImage(prev.content, data.url) }));
-      setMessage('图片已插入 Markdown');
-    } catch (e) {
-      setError(e.message || 'upload_failed');
+      let uploadedUrl = '';
+      const succeeded = await runWithFeedback(
+        async () => {
+          const data = await apiRequest('/admin/media/images', { method: 'POST', body });
+          uploadedUrl = data.url || '';
+        },
+        {
+          setError,
+          setMessage,
+          successMessage: '图片已插入 Markdown',
+          failureMessage: 'upload_failed',
+        },
+      );
+
+      if (!succeeded || !uploadedUrl) return;
+      setForm((prev) => ({ ...prev, content: appendMarkdownImage(prev.content, uploadedUrl) }));
     } finally {
       event.target.value = '';
     }
   }
 
   async function togglePublish(postId, action) {
-    setError('');
-    try {
-      await apiRequest(`/admin/posts/${postId}/${action}`, { method: 'POST' });
-      setMessage(getPublishSuccessMessage(action));
-      await loadPosts();
-    } catch (e) {
-      setError(e.message || 'publish_failed');
-    }
+    const succeeded = await runWithFeedback(
+      () => apiRequest(`/admin/posts/${postId}/${action}`, { method: 'POST' }),
+      {
+        setError,
+        setMessage,
+        successMessage: getPublishSuccessMessage(action),
+        failureMessage: 'publish_failed',
+      },
+    );
+
+    if (!succeeded) return;
+    await loadPosts();
   }
 
   async function applyFilter(nextFilter) {

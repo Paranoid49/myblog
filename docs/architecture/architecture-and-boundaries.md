@@ -86,6 +86,32 @@ myblog 当前采用：
 
 ---
 
+## SiteSettings 边界
+
+位于：
+- `app/models/site_settings.py`
+- `app/services/setup_service.py`
+- `app/routes/api_v1_setup.py`
+- `app/routes/api_v1_author.py`
+
+当前能力：
+- 保存站点标题
+- 保存作者资料最小集合：昵称、简介、邮箱、头像链接、个人链接
+- 为 setup 与 author 两条链路提供同一份站点级基础信息
+
+当前边界：
+- 只承载站点级基础设置
+- 不承担 SEO 配置中心
+- 不承担运行时开关中心
+- 不承担任意页面杂项配置收纳
+- 不因为“先放这里最省事”而继续吸收无关字段
+
+判断标准：
+- 若一个字段不直接属于站点基础信息或作者基础资料，默认不进入 `SiteSettings`
+- 若边界不清，优先先补文档与测试约束，而不是先加字段
+
+---
+
 ## 前端边界
 
 ### 主题系统
