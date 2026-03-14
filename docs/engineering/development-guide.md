@@ -1,5 +1,12 @@
 # 开发与运行指南
 
+## 开发前先读
+
+以下改动开始前，建议先看守则文档，避免把局部问题扩成系统复杂度：
+
+- [演进与风险压制守则](./evolution-guardrails.md)
+- [哲学提分优化执行清单](./philosophy-score-optimization-checklist.md)
+
 ## 推荐开发启动方式
 
 开发时统一推荐使用：
@@ -160,5 +167,5 @@ python scripts/start_fullstack.py --backend-port 8000 --frontend-port 5173 --no-
 
 ## 原始来源文档
 
-- `docs/dev-fullstack-contract.md`
-- `docs/manual-checks-governance.md`
+- `docs/engineering/dev-fullstack-contract.md`
+- `docs/engineering/manual-checks-governance.md`

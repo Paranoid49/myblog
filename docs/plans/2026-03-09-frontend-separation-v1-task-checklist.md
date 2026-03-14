@@ -12,14 +12,14 @@
 
 ### T0-1 冻结 V1 边界文档 ✅ 已完成
 - 内容：做/不做清单、架构原则、扩展原则
-- 产出：`docs/v1-scope.md`
+- 产出：`docs/product/v1-scope.md`
 - 验收：
   - 明确“评论默认不上线”
   - 明确“官方支持 SQLite + PostgreSQL、light/dark”
 
 ### T0-2 冻结 API 契约文档 ✅ 已完成
 - 内容：统一响应结构、错误码、接口清单
-- 产出：`docs/api-v1-contract.md`
+- 产出：`docs/api/api-v1-contract.md`
 - 验收：
   - 所有接口使用 `code/message/data`
   - 管理端与前台接口边界清晰

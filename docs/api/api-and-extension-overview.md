@@ -133,14 +133,17 @@
 当前**不承担**：
 
 - 插件平台
-- 分布式消息系统
+- 插件元信息体系
+- Hook 优先级、重试或持久化系统
+- 热加载插件平台
 - 多层主题运行时系统
+- 主题市场
 - 多租户数据库编排
 
 ---
 
 ## 原始来源文档
 
-- `docs/api-v1-contract.md`
-- `docs/extension-api-v1.md`
-- `docs/lightweight-extension-boundaries.md`
+- `docs/api/api-v1-contract.md`
+- `docs/api/extension-api-v1.md`
+- `docs/architecture/lightweight-extension-boundaries.md`

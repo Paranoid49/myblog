@@ -1,6 +1,0 @@
-anonymous_href=/admin/login
-anonymous_login=True
-logged_in_href=/admin
-logged_in_admin=True
-login_redirect=True
-success=True

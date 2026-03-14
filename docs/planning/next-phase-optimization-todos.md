@@ -140,7 +140,7 @@
 
 ### TODO 8：主题与扩展机制保持轻量
 **状态：已完成**
-**关联文档**：`docs/lightweight-extension-boundaries.md`
+**关联文档**：`docs/architecture/lightweight-extension-boundaries.md`
 **目标**：保持当前正确方向，不做过度扩张。
 
 **要做的事**

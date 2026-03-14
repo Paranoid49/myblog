@@ -6,12 +6,12 @@
 
 本清单用于推进“文档与实现边界统一”的**方案 B**：
 
-> 以当前项目哲学 **轻量、克制、可扩展** 为约束，优先补齐实现，使核心能力与已冻结文档保持一致，而不是简单下调文档承诺。
+> 以当前项目哲学 **轻量、克制、可扩展** 为约束，依据真实需求、项目哲学和当前冻结承诺决定是补实现还是收文档，避免文档与实现边界继续失配。
 
 适用范围：
 
-- `docs/v1-scope.md`
-- `docs/api-v1-contract.md`
+- `docs/product/v1-scope.md`
+- `docs/api/api-v1-contract.md`
 - 当前后端与前端实现
 - 相关测试与验收链路
 
@@ -39,7 +39,7 @@
 当前已识别的文档 / 实现差距如下：
 
 ### D1. 默认数据库不一致
-- 文档：默认 SQLite（`docs/v1-scope.md`）
+- 文档：默认 SQLite（`docs/product/v1-scope.md`）
 - 代码：默认 `database_url` 为 PostgreSQL（`app/core/config.py`）
 
 ### D2. 图片格式支持不一致
@@ -311,9 +311,9 @@
 - 默认 SQLite 行为与 PostgreSQL 可选启用方式
 
 ### 涉及文件
-- `docs/api-v1-contract.md`
-- `docs/v1-scope.md`
-- `docs/extension-api-v1.md`（如涉及扩展说明更新）
+- `docs/api/api-v1-contract.md`
+- `docs/product/v1-scope.md`
+- `docs/api/extension-api-v1.md`（如涉及扩展说明更新）
 
 ### 验收标准
 - 文档与实现再次对齐

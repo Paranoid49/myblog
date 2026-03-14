@@ -65,6 +65,27 @@ myblog 当前采用：
 
 ---
 
+## 文章模块边界
+
+位于：
+- `app/routes/api_v1_posts.py`
+- `app/services/post_service.py`
+- `app/services/admin_post_service.py`
+- `frontend/src/admin/pages/AdminPostsPage.jsx`
+
+当前能力：
+- 前台已发布文章读取
+- 后台文章创建、编辑、筛选、发布、转草稿
+- Markdown 导入导出
+- 与文章编辑直接相关的最小图片插入能力
+
+当前边界：
+- 只服务个人博客文章生产闭环
+- 优先通过单文件分区、轻量 hook、现有 service 收口复杂度
+- 不承担 SEO 平台、协作编辑、版本系统、审核流、大型媒体中心等平台化能力
+
+---
+
 ## 前端边界
 
 ### 主题系统
@@ -133,6 +154,6 @@ myblog 当前采用：
 
 ## 原始来源文档
 
-- `docs/lightweight-extension-boundaries.md`
-- `docs/extension-api-v1.md`
-- `docs/v1-scope.md`
+- `docs/architecture/lightweight-extension-boundaries.md`
+- `docs/api/extension-api-v1.md`
+- `docs/product/v1-scope.md`

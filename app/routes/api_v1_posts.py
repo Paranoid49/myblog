@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -22,6 +23,10 @@ from app.services.post_service import (
 )
 
 router = APIRouter(prefix="/api/v1", tags=["api-v1-posts"])
+
+# 文章模块保持“前台读取 + 后台写作闭环”边界，不在这里继续承载平台化能力。
+
+# request model / 辅助函数
 
 
 class AdminPostCreateRequest(BaseModel):
@@ -95,6 +100,42 @@ def _extract_title(markdown: str) -> str:
     return "Untitled"
 
 
+def _build_post_create(
+    db: Session,
+    *,
+    title: str,
+    summary: str | None,
+    content: str,
+    category_id: int | None,
+    tag_ids: list[int],
+) -> PostCreate:
+    return PostCreate(
+        title=title,
+        summary=summary,
+        content=content,
+        category_id=resolve_category_id(db, category_id),
+        tag_ids=tag_ids,
+    )
+
+
+def _create_post_entity(db: Session, data: PostCreate) -> Post:
+    existing_slugs = set(db.execute(select(Post.slug)).scalars().all())
+    post = build_post(data, existing_slugs=existing_slugs)
+    if data.tag_ids:
+        post.tags = get_tags_by_ids(db, data.tag_ids)
+    return post
+
+
+def _get_post_or_404(db: Session, post_id: int) -> Post | JSONResponse:
+    post = db.get(Post, post_id)
+    if not post:
+        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
+    return post
+
+
+# public read
+
+
 @router.get("/posts", response_model=ApiResponse)
 def list_posts_api(db: Session = Depends(get_db)) -> JSONResponse:
     posts = list_published_posts(db)
@@ -106,8 +147,10 @@ def get_post_detail_api(slug: str, db: Session = Depends(get_db)) -> JSONRespons
     post = get_post_by_slug(db, slug)
     if not post or not post.published_at:
         return error_response("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
-
     return ok_response(_serialize_post(post))
+
+
+# admin read/write
 
 
 @router.get("/admin/posts", response_model=ApiResponse)
@@ -133,20 +176,15 @@ def create_admin_post_api(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    resolved_category_id = resolve_category_id(db, payload.category_id)
-    existing_slugs = set(db.execute(select(Post.slug)).scalars().all())
-    post = build_post(
-        PostCreate(
-            title=payload.title,
-            summary=payload.summary,
-            content=payload.content,
-            category_id=resolved_category_id,
-            tag_ids=payload.tag_ids,
-        ),
-        existing_slugs=existing_slugs,
+    data = _build_post_create(
+        db,
+        title=payload.title,
+        summary=payload.summary,
+        content=payload.content,
+        category_id=payload.category_id,
+        tag_ids=payload.tag_ids,
     )
-    if payload.tag_ids:
-        post.tags = get_tags_by_ids(db, payload.tag_ids)
+    post = _create_post_entity(db, data)
 
     db.add(post)
     db.commit()
@@ -155,27 +193,24 @@ def create_admin_post_api(
     return ok_response(_serialize_post(post), status_code=status.HTTP_201_CREATED)
 
 
+# markdown import/export
+
+
 @router.post("/admin/posts/import-markdown", response_model=ApiResponse)
 def import_markdown_post_api(
     payload: ImportMarkdownRequest,
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    title = _extract_title(payload.markdown)
-    resolved_category_id = resolve_category_id(db, payload.category_id)
-    existing_slugs = set(db.execute(select(Post.slug)).scalars().all())
-    post = build_post(
-        PostCreate(
-            title=title,
-            summary=None,
-            content=payload.markdown,
-            category_id=resolved_category_id,
-            tag_ids=payload.tag_ids,
-        ),
-        existing_slugs=existing_slugs,
+    data = _build_post_create(
+        db,
+        title=_extract_title(payload.markdown),
+        summary=None,
+        content=payload.markdown,
+        category_id=payload.category_id,
+        tag_ids=payload.tag_ids,
     )
-    if payload.tag_ids:
-        post.tags = get_tags_by_ids(db, payload.tag_ids)
+    post = _create_post_entity(db, data)
 
     db.add(post)
     db.commit()
@@ -191,24 +226,20 @@ def update_admin_post_api(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    post = db.get(Post, post_id)
-    if not post:
-        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
+    post = _get_post_or_404(db, post_id)
+    if isinstance(post, JSONResponse):
+        return post
 
-    resolved_category_id = resolve_category_id(db, payload.category_id)
-    tags = get_tags_by_ids(db, payload.tag_ids)
-
-    update_post(
-        post,
-        PostCreate(
-            title=payload.title,
-            summary=payload.summary,
-            content=payload.content,
-            category_id=resolved_category_id,
-            tag_ids=payload.tag_ids,
-        ),
-        tags,
+    data = _build_post_create(
+        db,
+        title=payload.title,
+        summary=payload.summary,
+        content=payload.content,
+        category_id=payload.category_id,
+        tag_ids=payload.tag_ids,
     )
+    tags = get_tags_by_ids(db, data.tag_ids)
+    update_post(post, data, tags)
 
     db.commit()
     db.refresh(post)
@@ -222,12 +253,15 @@ def export_markdown_post_api(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    post = db.get(Post, post_id)
-    if not post:
-        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
+    post = _get_post_or_404(db, post_id)
+    if isinstance(post, JSONResponse):
+        return post
 
     markdown = f"# {post.title}\n\n{post.content}"
     return ok_response({"filename": f"{post.slug}.md", "markdown": markdown})
+
+
+# publish workflow
 
 
 @router.post("/admin/posts/{post_id}/publish", response_model=ApiResponse)
@@ -236,9 +270,9 @@ def publish_post_api(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    post = db.get(Post, post_id)
-    if not post:
-        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
+    post = _get_post_or_404(db, post_id)
+    if isinstance(post, JSONResponse):
+        return post
 
     publish_post(post)
     db.commit()
@@ -253,9 +287,9 @@ def unpublish_post_api(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    post = db.get(Post, post_id)
-    if not post:
-        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, 1404)
+    post = _get_post_or_404(db, post_id)
+    if isinstance(post, JSONResponse):
+        return post
 
     unpublish_post(post)
     db.commit()

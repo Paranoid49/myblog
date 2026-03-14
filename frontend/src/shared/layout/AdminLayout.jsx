@@ -9,9 +9,12 @@ export default function AdminLayout({ title, description, navigate, children }) 
   const isActive = (path) => location.pathname === path;
 
   async function logout() {
-    await apiRequest('/auth/logout', { method: 'POST' });
-    clearStoredUser();
-    navigate('/admin/login', { replace: true });
+    try {
+      await apiRequest('/auth/logout', { method: 'POST' });
+    } finally {
+      clearStoredUser();
+      navigate('/admin/login', { replace: true });
+    }
   }
 
   return (
