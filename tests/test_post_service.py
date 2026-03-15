@@ -5,7 +5,6 @@ from sqlalchemy import select
 from app.models import Category, Post, Tag
 from app.schemas.post import ImportMarkdownRequest, PostCreate
 from app.services.post_service import (
-    build_admin_post_list_query,
     build_markdown_export,
     build_post,
     build_post_from_import_markdown,
@@ -13,12 +12,16 @@ from app.services.post_service import (
     ensure_unique_slug,
     extract_markdown_title,
     get_post_by_slug,
+    get_post_or_raise,
+    list_admin_posts,
     list_published_posts,
+    PostNotFoundError,
     publish_post,
-    slugify,
     unpublish_post,
     update_post,
+    _build_admin_post_list_query,
 )
+from app.utils.text import slugify
 
 
 def test_slugify_converts_title_to_url_slug() -> None:
@@ -88,7 +91,7 @@ def test_build_markdown_export_includes_title_and_content() -> None:
 
 
 def test_build_admin_post_list_query_applies_filters() -> None:
-    stmt = build_admin_post_list_query(category_id=1, tag_id=2)
+    stmt = _build_admin_post_list_query(category_id=1, tag_id=2)
 
     compiled = str(stmt)
     assert "posts.category_id = :category_id_1" in compiled

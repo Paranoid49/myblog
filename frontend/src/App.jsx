@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import SetupPage from './setup/pages/SetupPage';
 import LoginPage from './admin/pages/LoginPage';
 import AdminHomePage from './admin/pages/AdminHomePage';
@@ -11,6 +11,7 @@ import PublicTagPage from './public/pages/PublicTagPage';
 import PublicHomePage from './public/pages/PublicHomePage';
 import PublicPostDetailPage from './public/pages/PublicPostDetailPage';
 import PublicAuthorPage from './public/pages/PublicAuthorPage';
+import NotFoundPage from './public/pages/NotFoundPage';
 
 export default function App() {
   return (
@@ -55,7 +56,7 @@ export default function App() {
           </AuthGuard>
         }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

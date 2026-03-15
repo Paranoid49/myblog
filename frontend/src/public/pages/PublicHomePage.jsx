@@ -1,13 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../../shared/api/client';
+import { formatDate } from '../../shared/utils/format';
 import PublicLayout from '../../shared/layout/PublicLayout';
-
-function formatDate(value) {
-  if (!value) return '未发布';
-  const date = new Date(value);
-  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
-}
 
 export default function PublicHomePage() {
   const [posts, setPosts] = useState([]);

@@ -1,40 +1,29 @@
+"""数据库引擎工厂。
+
+根据 DATABASE_URL 的驱动类型创建对应的 SQLAlchemy 引擎，
+封装不同数据库的连接参数差异。
+"""
+
 from sqlalchemy import create_engine
-from sqlalchemy.engine import URL, make_url
+from sqlalchemy.engine import Engine, make_url
 
 
-class BaseDatabaseProvider:
-    name: str = ""
-
-    def supports(self, url: URL) -> bool:
-        raise NotImplementedError
-
-    def create_engine(self, database_url: str):
-        return create_engine(database_url, future=True)
-
-
-class SQLiteDatabaseProvider(BaseDatabaseProvider):
-    name = "sqlite"
-
-    def supports(self, url: URL) -> bool:
-        return url.drivername.startswith("sqlite")
-
-
-class PostgreSQLDatabaseProvider(BaseDatabaseProvider):
-    name = "postgresql"
-
-    def supports(self, url: URL) -> bool:
-        return url.drivername.startswith("postgresql")
-
-
-DATABASE_PROVIDERS: dict[str, BaseDatabaseProvider] = {
-    "sqlite": SQLiteDatabaseProvider(),
-    "postgresql": PostgreSQLDatabaseProvider(),
-}
-
-
-def resolve_database_provider(database_url: str) -> BaseDatabaseProvider:
+def create_app_engine(database_url: str) -> Engine:
+    """根据数据库 URL 创建引擎，自动处理不同数据库的参数差异。"""
     url = make_url(database_url)
-    for provider in DATABASE_PROVIDERS.values():
-        if provider.supports(url):
-            return provider
-    raise ValueError(f"unsupported_database_driver:{url.drivername}")
+    driver = url.drivername
+
+    if driver.startswith("sqlite"):
+        return create_engine(
+            database_url,
+            future=True,
+            connect_args={"check_same_thread": False},
+        )
+    elif driver.startswith("postgresql"):
+        return create_engine(
+            database_url,
+            future=True,
+            pool_pre_ping=True,
+        )
+    else:
+        raise ValueError(f"unsupported_database_driver:{driver}")

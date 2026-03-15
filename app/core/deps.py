@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.error_codes import UNAUTHORIZED
 from app.models import User
+from app.schemas.api_response import build_error_detail
 
 
-UNAUTHORIZED_DETAIL = {"code": UNAUTHORIZED, "message": "unauthorized", "data": None}
+UNAUTHORIZED_DETAIL = build_error_detail("unauthorized", UNAUTHORIZED)
 
 
 def get_current_admin(request: Request, db: Session = Depends(get_db)) -> User:

@@ -3,7 +3,6 @@ from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
@@ -11,13 +10,14 @@ os.environ["SECRET_KEY"] = "test-secret-key"
 
 import app.models  # noqa: F401
 from app.core.db import Base, get_db
+from app.core.database_provider import create_app_engine
 from app.main import app as fastapi_app
 from app.models import Category, Post, SiteSettings, Tag
 from app.services.auth_service import build_admin_user
 from app.services.setup_service import clear_initialized_cache
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(TEST_DATABASE_URL, future=True, connect_args={"check_same_thread": False})
+engine = create_app_engine(TEST_DATABASE_URL)
 TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 

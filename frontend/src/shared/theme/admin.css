@@ -1,0 +1,248 @@
+/* ============================================
+   后台管理专用样式
+   ============================================ */
+
+/* === Admin Frame === */
+.admin-frame {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+}
+
+.admin-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.admin-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-xs);
+}
+
+.admin-brand {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.admin-brand::before {
+  content: '>';
+  color: var(--accent);
+}
+
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  flex: 1;
+}
+
+.admin-nav a {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.admin-nav a:hover {
+  background: var(--bg-surface);
+  color: var(--accent);
+}
+
+.admin-nav a.active {
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+
+.admin-main {
+  padding: var(--space-xl);
+  background: var(--bg);
+}
+
+.admin-page-head {
+  margin-bottom: var(--space-xl);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--divider);
+}
+
+.admin-page-head h2 {
+  font-family: var(--font-mono);
+}
+
+.admin-page-head h2::before {
+  content: '# ';
+  color: var(--accent);
+}
+
+/* === Panel Card === */
+.panel-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+
+.panel-card h3 {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  margin-bottom: var(--space-md);
+}
+
+.panel-card h3::before {
+  content: '> ';
+  color: var(--accent);
+}
+
+/* === Editor Layout === */
+.editor-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+.editor-form-grid,
+.stack-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.editor-textarea {
+  min-height: 400px;
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  background: var(--code-bg);
+  border-color: var(--border);
+  resize: vertical;
+}
+
+.preview-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  min-height: 400px;
+}
+
+.preview-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border);
+}
+
+/* === Admin Post List === */
+.admin-post-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.admin-post-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.admin-post-item:hover {
+  border-color: var(--border-accent);
+  background: var(--bg-surface);
+}
+
+.admin-post-item h4 {
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+}
+
+/* === Dashboard Grid === */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-lg);
+}
+
+/* === Section Head === */
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+}
+
+/* === Filter & Toolbar === */
+.filter-row,
+.toolbar-row,
+.inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+/* === Simple List === */
+.simple-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.simple-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+/* === Responsive (后台) === */
+@media (max-width: 960px) {
+  .admin-frame {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    position: relative;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .admin-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .editor-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-main {
+    padding: var(--space-md);
+  }
+}

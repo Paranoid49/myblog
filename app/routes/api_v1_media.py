@@ -10,7 +10,7 @@ from app.core.error_codes import IMAGE_TOO_LARGE, UNSUPPORTED_IMAGE_TYPE
 from app.core.hook_bus import hook_bus
 from app.models import User
 from app.schemas.api_response import ApiResponse, error_response, ok_response
-from app.services.post_service import slugify
+from app.utils.text import slugify
 
 router = APIRouter(prefix="/api/v1", tags=["api-v1-media"])
 
@@ -51,6 +51,7 @@ async def upload_image_api(
     save_path.write_bytes(content)
 
     url = f"/static/uploads/{filename}"
+    # 媒体模块只有单一上传接口，hook 触发就地保留，不单独建 service
     hook_bus.emit("media.image_uploaded", {"key": filename, "url": url, "content_type": content_type})
     return ok_response(
         {

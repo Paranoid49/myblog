@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Category, Tag
+from app.utils.text import slugify
 
 
 def list_taxonomy(db: Session) -> tuple[list[Category], list[Tag]]:
@@ -18,3 +19,21 @@ def get_category_by_slug(db: Session, slug: str) -> Category | None:
 def get_tag_by_slug(db: Session, slug: str) -> Tag | None:
     stmt = select(Tag).options(selectinload(Tag.posts)).where(Tag.slug == slug)
     return db.execute(stmt).scalar_one_or_none()
+
+
+def create_category(db: Session, name: str) -> Category:
+    """创建分类并持久化。"""
+    category = Category(name=name, slug=slugify(name))
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    return category
+
+
+def create_tag(db: Session, name: str) -> Tag:
+    """创建标签并持久化。"""
+    tag = Tag(name=name, slug=slugify(name))
+    db.add(tag)
+    db.commit()
+    db.refresh(tag)
+    return tag

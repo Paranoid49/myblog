@@ -6,12 +6,8 @@
 
 按目的进入：
 
-- 改动前做边界判断： [变更边界检查清单](./change-review-checklist.md)
-- 需要查某类规则真正该去哪改： [关键规则权威来源索引](./rule-authority-index.md)
-- 需要理解演进中的高风险方向： [演进与风险压制守则](./evolution-guardrails.md)
-- 需要长期保持治理基线： [长期守护规则](./long-term-guardrails.md)
+- 改动前做边界判断与风险检查： [工程守则与变更检查](./engineering-guardrails.md)
 - 需要回归基线： [核心回归测试包](./core-regression-suite.md)
-- 需要查看阶段性治理待办： [哲学提分优化执行清单](../planning/project-philosophy-9plus-optimization-todos.md)
 
 ## 推荐开发启动方式
 
@@ -137,7 +133,7 @@ pytest
 
 - 优先通过 `scripts/with_server.py` 管理前后端生命周期
 - 优先使用隔离测试数据库
-- 完成后按 `docs/manual-checks-governance.md` 清理临时测试产物
+- 完成后按工程守则清理临时测试产物
 
 ---
 
@@ -195,10 +191,3 @@ pytest
 - 不建议新增第二套独立 API client 策略区分开发/生产
 - 不建议为了联调引入额外反向代理层
 - 不建议把简单端口与代理问题升级成更复杂配置系统
-
----
-
-## 原始来源文档
-
-- `docs/engineering/dev-fullstack-contract.md`
-- `docs/engineering/manual-checks-governance.md`

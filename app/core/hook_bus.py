@@ -1,6 +1,9 @@
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -25,6 +28,7 @@ class HookBus:
             try:
                 handler(event)
             except Exception:
+                logger.exception("hook handler failed for event '%s'", event_name)
                 continue
 
 

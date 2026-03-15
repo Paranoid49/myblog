@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Category, Tag
-from app.services.post_service import slugify
+from app.utils.text import slugify
 
 
 def resolve_category_id(db: Session, category_id: int | None) -> int:

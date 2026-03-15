@@ -138,6 +138,27 @@
 - 成功：200
 - 失败：404（`1404`）
 
+### 6.5 POST `/api/v1/admin/posts/{post_id}`
+- 说明：更新指定文章
+- 入参（JSON）：
+  - `title: string`
+  - `summary: string | null`
+  - `content: string`
+  - `category_id: int | null`
+  - `tag_ids: int[]`
+- 成功：200
+- 失败：404（`1404`）
+
+### 6.6 POST `/api/v1/admin/posts/import-markdown`
+- 说明：通过 Markdown 内容导入新文章
+- 入参（JSON）：`ImportMarkdownRequest`
+- 成功：201
+
+### 6.7 GET `/api/v1/admin/posts/{post_id}/export-markdown`
+- 说明：导出指定文章为 Markdown 格式
+- 成功：200
+- 失败：404（`1404`）
+
 ## 7. 后台分类标签接口（Admin/Taxonomy）
 
 > 需要登录（session）

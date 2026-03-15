@@ -122,7 +122,7 @@ src/
 
 ## 测试策略
 
-- 测试使用 SQLite 内存数据库（`test.db`）
+- 测试使用 SQLite 文件数据库（`test.db`）
 - `conftest.py` 提供常用 fixtures：`client`、`initialized_site`、`admin_user`、`logged_in_admin`
 - 每个测试前清除初始化缓存（`clear_initialized_cache()`）
 

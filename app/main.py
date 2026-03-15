@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -7,7 +8,12 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
 from app.core.db import SessionLocal
+from app.core.error_codes import SITE_NOT_INITIALIZED
 from app.core.extension_loader import load_extensions
+from app.schemas.api_response import build_error_detail
+
+logger = logging.getLogger(__name__)
+
 from app.routes.api_v1_auth import router as api_v1_auth_router
 from app.routes.api_v1_author import router as api_v1_author_router
 from app.routes.api_v1_posts import router as api_v1_posts_router
@@ -22,6 +28,9 @@ FRONTEND_DIST_DIR = BASE_DIR.parent / "frontend" / "dist"
 
 load_extensions(settings.extension_modules)
 
+if settings.secret_key == "change-me":
+    logger.warning("SECRET_KEY 使用默认值 'change-me'，生产环境请在 .env 中配置安全的密钥")
+
 app = FastAPI(title="myblog")
 app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -35,8 +44,8 @@ app.include_router(api_v1_taxonomy_router)
 app.include_router(api_v1_media_router)
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
-    if exc.status_code == 401 and isinstance(exc.detail, dict):
-        return JSONResponse(status_code=401, content=exc.detail)
+    if isinstance(exc.detail, dict):
+        return JSONResponse(status_code=exc.status_code, content=exc.detail)
     raise exc
 
 
@@ -68,7 +77,7 @@ async def check_initialized_middleware(request: Request, call_next):
         if path.startswith("/api/"):
             return JSONResponse(
                 status_code=409,
-                content={"code": 1001, "message": "site_not_initialized", "data": None},
+                content=build_error_detail("site_not_initialized", SITE_NOT_INITIALIZED),
             )
         # 页面请求重定向到 /setup
         return RedirectResponse(url="/setup", status_code=302)

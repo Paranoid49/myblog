@@ -1,7 +1,5 @@
 import sys
 
-import pytest
-
 from app.core.extension_loader import load_extensions
 from app.core.hook_bus import hook_bus
 
@@ -26,6 +24,7 @@ def test_load_extensions_imports_sample_extension() -> None:
     assert len(hook_bus._handlers["post.published"]) >= 1
 
 
-def test_load_extensions_raises_for_missing_module() -> None:
-    with pytest.raises(ModuleNotFoundError):
-        load_extensions("app.extensions.not_exists")
+def test_load_extensions_skips_missing_module() -> None:
+    """加载不存在的模块时跳过并返回空列表。"""
+    loaded = load_extensions("app.extensions.not_exists")
+    assert loaded == []

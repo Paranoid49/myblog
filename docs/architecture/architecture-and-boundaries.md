@@ -182,4 +182,4 @@ myblog 当前采用：
 
 - `docs/architecture/lightweight-extension-boundaries.md`
 - `docs/api/extension-api-v1.md`
-- `docs/product/v1-scope.md`
+- `docs/product/product-overview.md`

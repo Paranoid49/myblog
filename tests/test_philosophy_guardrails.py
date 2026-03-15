@@ -180,11 +180,11 @@ def test_core_regression_suite_keeps_high_value_commands_documented() -> None:
 def test_docs_readme_keeps_single_source_document_governance() -> None:
     content = Path('docs/README.md').read_text(encoding='utf-8')
     assert '新增文档前，先判断现有文档是否可以补充' in content
-    assert '`planning/` 只保留当前仍在执行或仍需持续维护的计划文档' in content
+    assert '只保存历史材料' in content
 
 
 def test_long_term_guardrails_keep_hotspot_monitoring_targets_documented() -> None:
-    content = Path('docs/engineering/long-term-guardrails.md').read_text(encoding='utf-8')
+    content = Path('docs/engineering/engineering-guardrails.md').read_text(encoding='utf-8')
     assert 'app/routes/api_v1_posts.py' in content
     assert 'frontend/src/admin/hooks/useAdminPostsState.js' in content
     assert '触发收口' in content
