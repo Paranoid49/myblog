@@ -8,7 +8,7 @@
 
 ### 1.2 注册表位置
 - 文件：`app/core/database_provider.py`
-- 注册表变量：`DATABASE_PROVIDERS`
+- 工厂函数：`create_app_engine()`
 
 ### 1.3 当前职责边界
 数据库 provider 当前只承担：

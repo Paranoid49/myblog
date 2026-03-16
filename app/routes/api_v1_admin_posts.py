@@ -7,8 +7,9 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.deps import get_current_admin, require_csrf_header
 from app.core.error_codes import POST_NOT_FOUND
+from app.core.exceptions import NotFoundError
 from app.models import User
-from app.schemas.api_response import ApiResponse, error_response, ok_response
+from app.schemas.api_response import ApiResponse, ok_response
 from app.schemas.pagination import build_paginated_data
 from app.schemas.post import AdminPostWriteRequest, ImportMarkdownRequest
 from app.schemas.serializers import serialize_post
@@ -93,7 +94,7 @@ def update_admin_post_api(
     try:
         post = get_post_or_raise(db, post_id)
     except PostNotFoundError:
-        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, POST_NOT_FOUND)
+        raise NotFoundError("post_not_found", POST_NOT_FOUND)
 
     data, tags = build_post_create_payload(
         db,
@@ -116,7 +117,7 @@ def export_markdown_post_api(
     try:
         post = get_post_or_raise(db, post_id)
     except PostNotFoundError:
-        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, POST_NOT_FOUND)
+        raise NotFoundError("post_not_found", POST_NOT_FOUND)
 
     return ok_response(build_markdown_export(post))
 
@@ -134,7 +135,7 @@ def publish_post_api(
     try:
         post = get_post_or_raise(db, post_id)
     except PostNotFoundError:
-        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, POST_NOT_FOUND)
+        raise NotFoundError("post_not_found", POST_NOT_FOUND)
 
     post = save_publish(db, post)
     return ok_response(serialize_post(post))
@@ -150,7 +151,7 @@ def unpublish_post_api(
     try:
         post = get_post_or_raise(db, post_id)
     except PostNotFoundError:
-        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, POST_NOT_FOUND)
+        raise NotFoundError("post_not_found", POST_NOT_FOUND)
 
     post = save_unpublish(db, post)
     return ok_response(serialize_post(post))
@@ -166,6 +167,6 @@ def delete_post_api(
     try:
         post = get_post_or_raise(db, post_id)
     except PostNotFoundError:
-        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, POST_NOT_FOUND)
+        raise NotFoundError("post_not_found", POST_NOT_FOUND)
     delete_post(db, post)
     return ok_response(None)

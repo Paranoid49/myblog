@@ -7,9 +7,10 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.deps import get_current_admin, require_csrf_header
 from app.core.error_codes import IMAGE_TOO_LARGE, UNSUPPORTED_IMAGE_TYPE
+from app.core.exceptions import AppError
 from app.core.hook_bus import hook_bus
 from app.models import User
-from app.schemas.api_response import ApiResponse, error_response, ok_response
+from app.schemas.api_response import ApiResponse, ok_response
 from app.utils.text import slugify
 
 router = APIRouter(prefix="/api/v1", tags=["api-v1-media"])
@@ -58,16 +59,20 @@ async def upload_image_api(
 ) -> JSONResponse:
     content_type = file.content_type or ""
     if content_type not in ALLOWED_IMAGE_TYPES:
-        return error_response("unsupported_image_type", status.HTTP_400_BAD_REQUEST, UNSUPPORTED_IMAGE_TYPE)
+        raise AppError("unsupported_image_type", UNSUPPORTED_IMAGE_TYPE, 400)
 
     content = await file.read()
     if len(content) > IMAGE_MAX_BYTES:
-        return error_response("image_too_large", status.HTTP_400_BAD_REQUEST, IMAGE_TOO_LARGE)
+        raise AppError("image_too_large", IMAGE_TOO_LARGE, 400)
 
     # Magic bytes 校验：验证文件内容与声明的类型一致
     detected_type = detect_image_type(content)
     if detected_type is None or detected_type not in ALLOWED_IMAGE_TYPES:
-        return error_response("unsupported_image_type", status.HTTP_400_BAD_REQUEST, UNSUPPORTED_IMAGE_TYPE)
+        raise AppError("unsupported_image_type", UNSUPPORTED_IMAGE_TYPE, 400)
+
+    # 声明类型与检测类型一致性校验
+    if detected_type != content_type:
+        raise AppError("unsupported_image_type", UNSUPPORTED_IMAGE_TYPE, 400)
 
     ext = IMAGE_EXTENSION_BY_TYPE.get(content_type, ".img")
     filename = f"{slugify(Path(file.filename or 'image').stem)}-{len(content)}{ext}"

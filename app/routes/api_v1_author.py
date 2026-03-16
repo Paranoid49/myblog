@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.deps import get_current_admin, require_csrf_header
 from app.core.error_codes import SITE_NOT_INITIALIZED
+from app.core.exceptions import ConflictError
 from app.models import User
-from app.schemas.api_response import ApiResponse, error_response, ok_response
+from app.schemas.api_response import ApiResponse, ok_response
 from app.schemas.author import AuthorProfileUpdateRequest
 from app.schemas.serializers import serialize_author
 from app.services.author_service import update_author
@@ -19,7 +20,7 @@ router = APIRouter(prefix="/api/v1/author", tags=["api-v1-author"])
 def get_author_profile(db: Session = Depends(get_db)) -> JSONResponse:
     settings = get_site_settings(db)
     if settings is None:
-        return error_response("site_not_initialized", status.HTTP_409_CONFLICT, SITE_NOT_INITIALIZED)
+        raise ConflictError("site_not_initialized", SITE_NOT_INITIALIZED)
 
     return ok_response(serialize_author(settings))
 
@@ -33,7 +34,7 @@ def update_author_profile(
 ) -> JSONResponse:
     settings = get_site_settings(db)
     if settings is None:
-        return error_response("site_not_initialized", status.HTTP_409_CONFLICT, SITE_NOT_INITIALIZED)
+        raise ConflictError("site_not_initialized", SITE_NOT_INITIALIZED)
 
     settings = update_author(
         db, settings, name=payload.name, bio=payload.bio, email=payload.email, avatar=payload.avatar, link=payload.link

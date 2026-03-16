@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { getAdminEntryPath } from '../auth/session';
 import { useTheme } from '../theme/ThemeProvider';
 
-export default function PublicLayout({ title, description, children }) {
+export default function PublicLayout({ title, description, blogTitle, children }) {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
 
@@ -13,7 +13,7 @@ export default function PublicLayout({ title, description, children }) {
       <header className="site-header">
         <div className="site-header-inner">
           <div>
-            <Link className="brand-link" to="/">myblog</Link>
+            <Link className="brand-link" to="/">{blogTitle || 'myblog'}</Link>
             <p className="site-description">技术博客 · React + FastAPI</p>
           </div>
           <nav className="site-nav">

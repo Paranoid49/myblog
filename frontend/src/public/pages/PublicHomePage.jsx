@@ -9,16 +9,21 @@ export default function PublicHomePage() {
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [blogTitle, setBlogTitle] = useState('');
 
   useEffect(() => {
     apiRequest('/posts')
       .then((data) => setPosts(data || []))
       .catch((e) => setError(e.message || 'load_failed'))
       .finally(() => setLoaded(true));
+    // 获取博客标题
+    apiRequest('/author')
+      .then((data) => setBlogTitle(data?.blog_title || ''))
+      .catch(() => {});
   }, []);
 
   return (
-    <PublicLayout title="首页" description="记录技术实践、代码思考与系统构建。">
+    <PublicLayout title="首页" description="记录技术实践、代码思考与系统构建。" blogTitle={blogTitle}>
       {error ? <div className="notice error">{error}</div> : null}
       {!loaded ? (
         <PostListSkeleton />

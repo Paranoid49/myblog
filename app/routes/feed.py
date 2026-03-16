@@ -15,7 +15,7 @@ router = APIRouter(tags=["feed"])
 @router.get("/feed.xml", include_in_schema=False)
 def rss_feed(db: Session = Depends(get_db)) -> Response:
     """生成 RSS 2.0 Feed"""
-    posts = list_published_posts(db)
+    posts, _ = list_published_posts(db)
     items = "".join(
         f"""<item>
             <title>{escape(p.title)}</title>

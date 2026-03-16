@@ -22,7 +22,7 @@ export default function AdminLayout({ title, description, navigate, children }) 
         <div>
           <p className="admin-kicker">控制台</p>
           <h1 className="admin-brand">myblog</h1>
-          <p className="muted" style={{ fontSize: '0.8125rem', marginTop: '4px' }}>
+          <p className="muted admin-user-info">
             {user?.username || 'unknown'}
           </p>
         </div>

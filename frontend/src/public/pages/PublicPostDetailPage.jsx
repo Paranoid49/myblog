@@ -10,6 +10,14 @@ export default function PublicPostDetailPage() {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
   const [error, setError] = useState('');
+  const [blogTitle, setBlogTitle] = useState('');
+
+  useEffect(() => {
+    // 获取博客标题
+    apiRequest('/author')
+      .then((data) => setBlogTitle(data?.blog_title || ''))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!slug) return;
@@ -19,7 +27,7 @@ export default function PublicPostDetailPage() {
   }, [slug]);
 
   return (
-    <PublicLayout title={post?.title || '文章详情'} description={post?.summary || ''}>
+    <PublicLayout title={post?.title || '文章详情'} description={post?.summary || ''} blogTitle={blogTitle}>
       <p className="mb-lg">
         <Link to="/" className="nav-link">← 返回首页</Link>
       </p>

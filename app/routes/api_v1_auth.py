@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, Form, Request, status
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.deps import require_csrf_header
 from app.core.error_codes import INVALID_CREDENTIALS, SITE_NOT_INITIALIZED, TOO_MANY_ATTEMPTS
+from app.core.exceptions import ConflictError, TooManyRequestsError, UnauthorizedError
 from app.core.rate_limiter import login_limiter
-from app.schemas.api_response import ApiResponse, error_response, ok_response
+from app.schemas.api_response import ApiResponse, ok_response
 from app.services.auth_service import authenticate_user
 from app.services.setup_service import is_initialized
 
@@ -20,17 +21,17 @@ def api_login(
     _csrf: None = Depends(require_csrf_header),
 ) -> JSONResponse:
     if not is_initialized(db):
-        return error_response("site_not_initialized", status.HTTP_409_CONFLICT, SITE_NOT_INITIALIZED)
+        raise ConflictError("site_not_initialized", SITE_NOT_INITIALIZED)
 
     # 速率限制检查
     client_ip = request.client.host if request.client else "unknown"
     if login_limiter.is_blocked(client_ip):
-        return error_response("too_many_attempts", status.HTTP_429_TOO_MANY_REQUESTS, TOO_MANY_ATTEMPTS)
+        raise TooManyRequestsError("too_many_attempts", TOO_MANY_ATTEMPTS)
 
     user = authenticate_user(db, username, password)
     if not user:
         login_limiter.record(client_ip)
-        return error_response("invalid_credentials", status.HTTP_401_UNAUTHORIZED, INVALID_CREDENTIALS)
+        raise UnauthorizedError("invalid_credentials", INVALID_CREDENTIALS)
 
     # 登录成功，重置速率限制
     login_limiter.reset(client_ip)

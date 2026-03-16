@@ -5,8 +5,9 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.deps import get_current_admin, require_csrf_header
 from app.core.error_codes import CATEGORY_EXISTS, CATEGORY_NOT_FOUND, TAG_EXISTS, TAG_NOT_FOUND
+from app.core.exceptions import ConflictError, NotFoundError
 from app.models import Category, Tag, User
-from app.schemas.api_response import ApiResponse, error_response, ok_response
+from app.schemas.api_response import ApiResponse, ok_response
 from app.schemas.pagination import build_paginated_data
 from app.schemas.serializers import serialize_category, serialize_post, serialize_tag
 from app.schemas.taxonomy import NameCreateRequest
@@ -35,7 +36,7 @@ def get_category_posts_api(
 ) -> JSONResponse:
     category, posts, total = get_published_posts_by_category(db, slug, page, page_size)
     if not category:
-        return error_response("category_not_found", status.HTTP_404_NOT_FOUND, CATEGORY_NOT_FOUND)
+        raise NotFoundError("category_not_found", CATEGORY_NOT_FOUND)
     return ok_response({
         "category": serialize_category(category),
         "posts": build_paginated_data(
@@ -50,7 +51,7 @@ def get_tag_posts_api(
 ) -> JSONResponse:
     tag, posts, total = get_published_posts_by_tag(db, slug, page, page_size)
     if not tag:
-        return error_response("tag_not_found", status.HTTP_404_NOT_FOUND, TAG_NOT_FOUND)
+        raise NotFoundError("tag_not_found", TAG_NOT_FOUND)
     return ok_response({
         "tag": serialize_tag(tag),
         "posts": build_paginated_data(
@@ -74,7 +75,7 @@ def create_category_api(
 ) -> JSONResponse:
     normalized_name = payload.name.strip()
     if category_exists_by_name(db, normalized_name):
-        return error_response("category_exists", status.HTTP_409_CONFLICT, CATEGORY_EXISTS)
+        raise ConflictError("category_exists", CATEGORY_EXISTS)
 
     category = create_category(db, normalized_name)
     return ok_response(serialize_category(category), status_code=status.HTTP_201_CREATED)
@@ -89,7 +90,7 @@ def create_tag_api(
 ) -> JSONResponse:
     normalized_name = payload.name.strip()
     if tag_exists_by_name(db, normalized_name):
-        return error_response("tag_exists", status.HTTP_409_CONFLICT, TAG_EXISTS)
+        raise ConflictError("tag_exists", TAG_EXISTS)
 
     tag = create_tag(db, normalized_name)
     return ok_response(serialize_tag(tag), status_code=status.HTTP_201_CREATED)
@@ -105,10 +106,10 @@ def update_category_api(
 ) -> JSONResponse:
     category = db.get(Category, category_id)
     if not category:
-        return error_response("category_not_found", status.HTTP_404_NOT_FOUND, CATEGORY_NOT_FOUND)
+        raise NotFoundError("category_not_found", CATEGORY_NOT_FOUND)
     normalized_name = payload.name.strip()
     if category_exists_by_name(db, normalized_name):
-        return error_response("category_exists", status.HTTP_409_CONFLICT, CATEGORY_EXISTS)
+        raise ConflictError("category_exists", CATEGORY_EXISTS)
     category = update_category(db, category, normalized_name)
     return ok_response(serialize_category(category))
 
@@ -122,7 +123,7 @@ def delete_category_api(
 ) -> JSONResponse:
     category = db.get(Category, category_id)
     if not category:
-        return error_response("category_not_found", status.HTTP_404_NOT_FOUND, CATEGORY_NOT_FOUND)
+        raise NotFoundError("category_not_found", CATEGORY_NOT_FOUND)
     delete_category(db, category)
     return ok_response(None)
 
@@ -137,10 +138,10 @@ def update_tag_api(
 ) -> JSONResponse:
     tag = db.get(Tag, tag_id)
     if not tag:
-        return error_response("tag_not_found", status.HTTP_404_NOT_FOUND, TAG_NOT_FOUND)
+        raise NotFoundError("tag_not_found", TAG_NOT_FOUND)
     normalized_name = payload.name.strip()
     if tag_exists_by_name(db, normalized_name):
-        return error_response("tag_exists", status.HTTP_409_CONFLICT, TAG_EXISTS)
+        raise ConflictError("tag_exists", TAG_EXISTS)
     tag = update_tag(db, tag, normalized_name)
     return ok_response(serialize_tag(tag))
 
@@ -154,6 +155,6 @@ def delete_tag_api(
 ) -> JSONResponse:
     tag = db.get(Tag, tag_id)
     if not tag:
-        return error_response("tag_not_found", status.HTTP_404_NOT_FOUND, TAG_NOT_FOUND)
+        raise NotFoundError("tag_not_found", TAG_NOT_FOUND)
     delete_tag(db, tag)
     return ok_response(None)

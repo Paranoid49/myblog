@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.error_codes import POST_NOT_FOUND
-from app.schemas.api_response import ApiResponse, error_response, ok_response
+from app.core.exceptions import NotFoundError
+from app.schemas.api_response import ApiResponse, ok_response
 from app.schemas.pagination import build_paginated_data
 from app.schemas.serializers import serialize_post
 from app.services.post_service import get_post_by_slug, list_published_posts
@@ -32,5 +33,5 @@ def list_posts_api(
 def get_post_detail_api(slug: str, db: Session = Depends(get_db)) -> JSONResponse:
     post = get_post_by_slug(db, slug)
     if not post or not post.published_at:
-        return error_response("post_not_found", status.HTTP_404_NOT_FOUND, POST_NOT_FOUND)
+        raise NotFoundError("post_not_found", POST_NOT_FOUND)
     return ok_response(serialize_post(post))

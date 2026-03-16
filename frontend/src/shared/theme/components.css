@@ -40,6 +40,25 @@
 .mb-sm { margin-bottom: var(--space-sm); }
 .mb-md { margin-bottom: var(--space-md); }
 .mb-lg { margin-bottom: var(--space-lg); }
+.mt-xl { margin-top: var(--space-xl); }
+
+/* === 内联块链接（卡片内的导航链接） === */
+.inline-block-link {
+  margin-top: var(--space-md);
+  display: inline-block;
+}
+
+/* === 管理后台用户信息 === */
+.admin-user-info {
+  font-size: 0.8125rem;
+  margin-top: 4px;
+}
+
+/* === 等宽小号文本 === */
+.mono-small {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
 
 /* === 标题修饰类 === */
 .mono-heading {

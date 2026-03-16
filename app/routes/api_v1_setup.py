@@ -1,7 +1,7 @@
 import logging
 from contextlib import contextmanager
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.engine import make_url
 
@@ -14,7 +14,8 @@ from app.core.error_codes import (
     SETUP_MIGRATION_FAILED,
     SETUP_PASSWORD_MISMATCH,
 )
-from app.schemas.api_response import ApiResponse, error_response, ok_response
+from app.core.exceptions import AppError, ConflictError
+from app.schemas.api_response import ApiResponse, ok_response
 from app.schemas.setup import SetupRequest, SetupStatusResponse
 from app.services.database_bootstrap_service import (
     DatabaseBootstrapError,
@@ -62,7 +63,7 @@ def get_setup_status() -> JSONResponse:
 @router.post("")
 def perform_setup(request: Request, data: SetupRequest, _csrf: None = Depends(require_csrf_header)) -> JSONResponse:
     if data.password != data.confirm_password:
-        return error_response("password_mismatch", status.HTTP_400_BAD_REQUEST, SETUP_PASSWORD_MISMATCH)
+        raise AppError("password_mismatch", SETUP_PASSWORD_MISMATCH, 400)
 
     if not database_exists():
         if _should_bootstrap_database():
@@ -70,19 +71,19 @@ def perform_setup(request: Request, data: SetupRequest, _csrf: None = Depends(re
                 ensure_database_exists(settings.database_url)
             except (DatabaseBootstrapError, UnsupportedDatabaseBootstrapError) as e:
                 logger.exception("数据库自动创建失败")
-                return error_response("database_bootstrap_failed", status.HTTP_500_INTERNAL_SERVER_ERROR, SETUP_DATABASE_BOOTSTRAP_FAILED)
+                raise AppError("database_bootstrap_failed", SETUP_DATABASE_BOOTSTRAP_FAILED, 500)
 
     try:
         upgrade_database()
     except Exception as e:
         logger.exception("数据库迁移失败")
-        return error_response("migration_failed", status.HTTP_500_INTERNAL_SERVER_ERROR, SETUP_MIGRATION_FAILED)
+        raise AppError("migration_failed", SETUP_MIGRATION_FAILED, 500)
 
     with _create_session() as db:
         try:
             user = initialize_site(db=db, blog_title=data.blog_title, username=data.username, password=data.password)
         except SetupAlreadyInitializedError:
-            return error_response("already_initialized", status.HTTP_409_CONFLICT, SETUP_ALREADY_INITIALIZED)
+            raise ConflictError("already_initialized", SETUP_ALREADY_INITIALIZED)
 
     request.session["user_id"] = user.id
     return ok_response({"user_id": user.id, "username": user.username})

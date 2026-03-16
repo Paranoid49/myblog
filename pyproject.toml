@@ -29,7 +29,7 @@ pg = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers -v"
+addopts = "--strict-markers -v --cov=app --cov-report=term-missing --cov-fail-under=80"
 
 [tool.ruff]
 line-length = 120

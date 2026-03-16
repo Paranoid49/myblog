@@ -21,8 +21,8 @@ export default function PublicAuthorPage() {
   }, []);
 
   return (
-    <PublicLayout title="关于作者" description="站点作者的基本资料与联系方式。">
-      <p style={{ marginBottom: 'var(--space-lg)' }}>
+    <PublicLayout title="关于作者" description="站点作者的基本资料与联系方式。" blogTitle={author?.blog_title || ''}>
+      <p className="mb-lg">
         <Link to="/" className="nav-link">← 返回首页</Link>
       </p>
 
@@ -36,12 +36,12 @@ export default function PublicAuthorPage() {
             <h2>{author.name || '未设置昵称'}</h2>
             <p className="author-bio">{author.bio || '这个作者还没有留下简介。'}</p>
             {author.link ? (
-              <p style={{ marginBottom: 'var(--space-sm)' }}>
+              <p className="mb-sm">
                 个人链接：<a href={author.link} target="_blank" rel="noreferrer" className="nav-link">{author.link}</a>
               </p>
             ) : null}
             {author.email ? (
-              <p className="muted" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>
+              <p className="muted mono-small">
                 {'<'}{author.email}{'>'}
               </p>
             ) : null}
