@@ -4,26 +4,28 @@ import { apiRequest } from '../../shared/api/client';
 import { formatDate } from '../../shared/utils/format';
 import PublicLayout from '../../shared/layout/PublicLayout';
 import { PostListSkeleton } from '../../shared/components/Skeleton';
+import Pagination from '../../shared/components/Pagination';
 
 export default function PublicHomePage() {
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState('');
   const [loaded, setLoaded] = useState(false);
-  const [blogTitle, setBlogTitle] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    apiRequest('/posts')
-      .then((data) => setPosts(data || []))
+    setLoaded(false);
+    apiRequest(`/posts?page=${page}&page_size=20`)
+      .then((data) => {
+        setPosts(data?.items || []);
+        setTotalPages(data?.total_pages || 1);
+      })
       .catch((e) => setError(e.message || 'load_failed'))
       .finally(() => setLoaded(true));
-    // 获取博客标题
-    apiRequest('/author')
-      .then((data) => setBlogTitle(data?.blog_title || ''))
-      .catch(() => {});
-  }, []);
+  }, [page]);
 
   return (
-    <PublicLayout title="首页" description="记录技术实践、代码思考与系统构建。" blogTitle={blogTitle}>
+    <PublicLayout title="首页" description="记录技术实践、代码思考与系统构建。">
       {error ? <div className="notice error">{error}</div> : null}
       {!loaded ? (
         <PostListSkeleton />
@@ -55,6 +57,7 @@ export default function PublicHomePage() {
           </article>
         ))}
       </section>
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </PublicLayout>
   );
 }

@@ -6,7 +6,6 @@ from app.core.error_codes import CSRF_REJECTED, UNAUTHORIZED
 from app.models import User
 from app.schemas.api_response import build_error_detail
 
-
 UNAUTHORIZED_DETAIL = build_error_detail("unauthorized", UNAUTHORIZED)
 CSRF_DETAIL = build_error_detail("csrf_rejected", CSRF_REJECTED)
 

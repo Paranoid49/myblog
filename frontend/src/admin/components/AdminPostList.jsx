@@ -1,6 +1,6 @@
 import { getPostPublishAction } from './postActions';
 
-export default function AdminPostList({ posts, onEdit, onExport, onPublish, onUnpublish }) {
+export default function AdminPostList({ posts, onEdit, onExport, onPublish, onUnpublish, onDelete }) {
   return (
     <section className="panel-card">
       <div className="section-head">
@@ -25,6 +25,7 @@ export default function AdminPostList({ posts, onEdit, onExport, onPublish, onUn
                 <button type="button" className={publishAction.variant} onClick={() => actionHandler(post.id)}>
                   {publishAction.text}
                 </button>
+                <button type="button" className="ghost-button" onClick={() => onDelete(post.id)}>删除</button>
               </div>
             </article>
           );

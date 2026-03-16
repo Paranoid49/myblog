@@ -1,4 +1,8 @@
 from conftest import CSRF_HEADERS
+from fastapi.testclient import TestClient
+
+from app.core.rate_limiter import login_limiter
+from app.main import app as fastapi_app
 
 
 def _form(client, **kwargs):
@@ -49,3 +53,30 @@ def test_api_auth_logout_clears_session(client, initialized_site, admin_user, se
         headers=CSRF_HEADERS,
     )
     assert create_after_logout.status_code == 401
+
+
+def test_login_rate_limit_blocks_after_max_attempts(client, initialized_site, admin_user):
+    """连续多次登录失败后被速率限制拦截"""
+    login_limiter.reset("testclient")  # 重置测试客户端的限制状态
+
+    for _ in range(5):
+        client.post("/api/v1/auth/login", data={"username": "admin", "password": "wrong"})
+
+    # 第 6 次应该被拦截
+    resp = client.post("/api/v1/auth/login", data={"username": "admin", "password": "wrong"})
+    assert resp.status_code == 429
+    assert resp.json()["code"] == 1006
+
+    login_limiter.reset("testclient")  # 清理
+
+
+def test_post_without_csrf_header_is_rejected(initialized_site, admin_user):
+    """不带 CSRF 头的 POST 请求被拒绝"""
+    # 使用原生 TestClient（不自动注入 CSRF 头）
+    with TestClient(fastapi_app) as raw_client:
+        resp = raw_client.post(
+            "/api/v1/auth/login",
+            data={"username": "admin", "password": "secret123"},
+        )
+    assert resp.status_code == 403
+    assert resp.json()["code"] == 1005

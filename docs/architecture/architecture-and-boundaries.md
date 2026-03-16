@@ -68,7 +68,8 @@ myblog 当前采用：
 ## 文章模块边界
 
 位于：
-- `app/routes/api_v1_posts.py`
+- `app/routes/api_v1_posts.py` — 前台公开接口
+- `app/routes/api_v1_admin_posts.py` — 后台管理接口
 - `app/services/post_service.py`
 - `app/services/admin_post_service.py`
 - `frontend/src/admin/pages/AdminPostsPage.jsx`
@@ -83,6 +84,23 @@ myblog 当前采用：
 - 只服务个人博客文章生产闭环
 - 优先通过单文件分区、轻量 hook、现有 service 收口复杂度
 - 不承担 SEO 平台、协作编辑、版本系统、审核流、大型媒体中心等平台化能力
+
+---
+
+## Taxonomy（分类/标签）模块边界
+
+位于：
+- `app/routes/api_v1_taxonomy.py` — 前台公开接口
+- `app/routes/api_v1_admin_taxonomy.py` — 后台管理接口
+- `app/services/taxonomy_service.py`
+
+当前能力：
+- 前台分类、标签列表查询
+- 后台分类、标签的创建、编辑、删除
+
+当前边界：
+- 只承担个人博客的分类与标签管理
+- 不承担多级分类树、标签权重、标签合并等平台化能力
 
 ---
 

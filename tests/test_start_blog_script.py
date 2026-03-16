@@ -5,7 +5,7 @@ from scripts.start_blog import PROJECT_ROOT, main
 
 
 def test_start_blog_inserts_project_root_into_sys_path() -> None:
-    assert PROJECT_ROOT == Path(__file__).resolve().parents[1]
+    assert Path(__file__).resolve().parents[1] == PROJECT_ROOT
 
 
 def test_start_blog_runs_migration_and_uvicorn() -> None:
@@ -46,7 +46,9 @@ def test_start_blog_allows_custom_port() -> None:
 
 def test_start_blog_bootstraps_database_for_explicit_postgresql_url() -> None:
     with (
-        patch("scripts.start_blog.settings.database_url", "postgresql+psycopg://postgres:postgres@localhost:5432/myblog"),
+        patch(
+            "scripts.start_blog.settings.database_url", "postgresql+psycopg://postgres:postgres@localhost:5432/myblog"
+        ),
         patch("scripts.start_blog.database_exists", return_value=False),
         patch("scripts.start_blog.ensure_database_exists") as mock_ensure_db,
         patch("scripts.start_blog.upgrade_database") as mock_upgrade,

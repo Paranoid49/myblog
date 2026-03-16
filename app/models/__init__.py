@@ -4,4 +4,4 @@ from app.models.site_settings import SiteSettings
 from app.models.tag import Tag
 from app.models.user import User
 
-__all__ = ["User", "Category", "Tag", "Post", "SiteSettings", "post_tags"]
+__all__ = ["Category", "Post", "SiteSettings", "Tag", "User", "post_tags"]

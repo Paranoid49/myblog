@@ -21,6 +21,7 @@ def _has_required_tables(db: Session) -> bool:
 
 
 def is_initialized(db: Session) -> bool:
+    """检查站点是否已完成初始化（存在管理员和站点设置）。"""
     global _initialized_cache
     if _initialized_cache is True:
         return True
@@ -45,12 +46,14 @@ def clear_initialized_cache() -> None:
 
 
 def get_site_settings(db: Session) -> SiteSettings | None:
+    """获取站点设置，表不存在或无数据时返回 None。"""
     if not _has_required_tables(db):
         return None
     return db.execute(select(SiteSettings)).scalar_one_or_none()
 
 
 def initialize_site(db: Session, blog_title: str, username: str, password: str) -> User:
+    """执行站点初始化：创建站点设置和管理员账户。"""
     global _initialized_cache
 
     if is_initialized(db):

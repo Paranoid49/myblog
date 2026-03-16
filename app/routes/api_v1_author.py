@@ -16,7 +16,7 @@ from app.services.setup_service import get_site_settings
 router = APIRouter(prefix="/api/v1/author", tags=["api-v1-author"])
 
 
-@router.get("", response_model=ApiResponse)
+@router.get("", response_model=ApiResponse, summary="获取作者资料")
 def get_author_profile(db: Session = Depends(get_db)) -> JSONResponse:
     settings = get_site_settings(db)
     if settings is None:
@@ -25,7 +25,7 @@ def get_author_profile(db: Session = Depends(get_db)) -> JSONResponse:
     return ok_response(serialize_author(settings))
 
 
-@router.post("", response_model=ApiResponse)
+@router.post("", response_model=ApiResponse, summary="更新作者资料")
 def update_author_profile(
     payload: AuthorProfileUpdateRequest,
     current_admin: User = Depends(get_current_admin),

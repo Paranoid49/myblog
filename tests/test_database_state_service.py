@@ -20,7 +20,10 @@ def test_database_exists_returns_true_when_target_database_exists() -> None:
     engine.connect.return_value = context_manager
 
     with (
-        patch("app.services.database_state_service.settings.database_url", "postgresql+psycopg://u:p@localhost:5432/myblog"),
+        patch(
+            "app.services.database_state_service.settings.database_url",
+            "postgresql+psycopg://u:p@localhost:5432/myblog",
+        ),
         patch("app.services.database_state_service.create_engine", return_value=engine),
     ):
         assert database_exists() is True
@@ -38,7 +41,10 @@ def test_database_exists_returns_false_when_target_database_missing() -> None:
     engine.connect.return_value = context_manager
 
     with (
-        patch("app.services.database_state_service.settings.database_url", "postgresql+psycopg://u:p@localhost:5432/myblog"),
+        patch(
+            "app.services.database_state_service.settings.database_url",
+            "postgresql+psycopg://u:p@localhost:5432/myblog",
+        ),
         patch("app.services.database_state_service.create_engine", return_value=engine),
     ):
         assert database_exists() is False
@@ -49,7 +55,10 @@ def test_database_exists_returns_false_when_connection_raises() -> None:
     engine.connect.side_effect = RuntimeError("boom")
 
     with (
-        patch("app.services.database_state_service.settings.database_url", "postgresql+psycopg://u:p@localhost:5432/myblog"),
+        patch(
+            "app.services.database_state_service.settings.database_url",
+            "postgresql+psycopg://u:p@localhost:5432/myblog",
+        ),
         patch("app.services.database_state_service.create_engine", return_value=engine),
     ):
         assert database_exists() is False
@@ -67,7 +76,10 @@ def test_database_exists_uses_unmasked_password_for_engine_url() -> None:
     engine.connect.return_value = context_manager
 
     with (
-        patch("app.services.database_state_service.settings.database_url", "postgresql+psycopg://postgres:123456@localhost:5432/myblog"),
+        patch(
+            "app.services.database_state_service.settings.database_url",
+            "postgresql+psycopg://postgres:123456@localhost:5432/myblog",
+        ),
         patch("app.services.database_state_service.create_engine", return_value=engine) as mock_create_engine,
     ):
         assert database_exists() is True

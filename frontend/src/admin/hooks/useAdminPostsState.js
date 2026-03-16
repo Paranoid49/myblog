@@ -24,6 +24,9 @@ export default function useAdminPostsState() {
   const [filter, setFilter] = useState(EMPTY_FILTER);
   const [previewMode, setPreviewMode] = useState('edit');
   const [form, setForm] = useState(EMPTY_FORM);
+  // 分页状态
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const selectedTagIds = useMemo(() => new Set(form.tag_ids.map((id) => Number(id))), [form.tag_ids]);
 
@@ -32,9 +35,11 @@ export default function useAdminPostsState() {
     setTaxonomy({ categories: data.categories || [], tags: data.tags || [] });
   }
 
-  async function loadPosts(nextFilter = filter) {
-    const data = await apiRequest(`/admin/posts${toQuery(nextFilter)}`);
-    setPosts(data || []);
+  async function loadPosts(nextFilter = filter, targetPage = page) {
+    const data = await apiRequest(`/admin/posts${toQuery(nextFilter, targetPage)}`);
+    // 后端返回分页格式：{ items, total, page, page_size, total_pages }
+    setPosts(data?.items || []);
+    setTotalPages(data?.total_pages || 1);
   }
 
   function resetForm() {
@@ -61,6 +66,12 @@ export default function useAdminPostsState() {
   useEffect(() => {
     initialize().catch((e) => setError(e.message || 'load_failed'));
   }, []);
+
+  // page 变化时重新加载文章列表（首次加载由 initialize 处理，跳过 page=1 的重复请求）
+  useEffect(() => {
+    if (page === 1) return;
+    loadPosts(filter, page).catch((e) => setError(e.message || 'load_failed'));
+  }, [page]);
 
   async function submitForm(event) {
     event.preventDefault();
@@ -173,9 +184,30 @@ export default function useAdminPostsState() {
     return updatePostPublishState(postId, 'unpublish', '文章已转为草稿');
   }
 
+  // 删除文章，需用户确认
+  async function deletePost(postId) {
+    if (!window.confirm('确定删除这篇文章？')) return;
+    const succeeded = await runWithFeedback(
+      () => apiRequest(`/admin/posts/${postId}/delete`, { method: 'POST' }),
+      {
+        setError,
+        setMessage,
+        successMessage: '文章已删除',
+        failureMessage: 'delete_failed',
+      },
+    );
+
+    if (!succeeded) return;
+    // 如果正在编辑被删除的文章，重置表单
+    if (form.id === postId) resetForm();
+    await loadPosts();
+  }
+
   async function applyFilter(nextFilter) {
     setFilter(nextFilter);
-    await loadPosts(nextFilter);
+    // 筛选条件变化时重置到第一页
+    setPage(1);
+    await loadPosts(nextFilter, 1);
   }
 
   function handleFieldChange(field, value) {
@@ -195,6 +227,9 @@ export default function useAdminPostsState() {
     previewMode,
     form,
     selectedTagIds,
+    page,
+    totalPages,
+    setPage,
     setPreviewMode,
     resetForm,
     fillForEdit,
@@ -204,6 +239,7 @@ export default function useAdminPostsState() {
     uploadImage,
     publishPost,
     unpublishPost,
+    deletePost,
     applyFilter,
     handleFieldChange,
     handleToggleTag,

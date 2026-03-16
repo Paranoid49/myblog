@@ -86,7 +86,7 @@ registerTheme('ocean');
 ### 3.1 核心能力
 - 位置：`app/core/hook_bus.py`
 - API：
-  - `subscribe(event_name, handler)`
+  - `subscribe(event_name, handler)` → 返回 `unsubscribe` 函数
   - `emit(event_name, payload)`
 - 监听器异常隔离：单个 handler 抛错不会影响主流程。
 
@@ -117,6 +117,22 @@ Hook 事件总线当前只承担：
 - `post.published`
 - `post.unpublished`
 - `media.image_uploaded`
+
+### 3.5 取消订阅
+
+`subscribe()` 返回一个取消订阅函数，调用后即停止接收事件：
+
+```python
+from app.core.hook_bus import hook_bus
+
+def my_handler(event):
+    print(event.payload)
+
+unsubscribe = hook_bus.subscribe("post.published", my_handler)
+
+# 不再需要时取消订阅
+unsubscribe()
+```
 
 ---
 

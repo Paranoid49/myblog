@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     # 运行环境：development 或 production
     environment: str = "development"
     extension_modules: str = ""
+    # 数据库连接池大小（仅对 PostgreSQL 生效，SQLite 忽略）
+    db_pool_size: int = 5
 
     @field_validator("database_url")
     @classmethod
@@ -28,8 +30,8 @@ class Settings(BaseSettings):
     @field_validator("secret_key")
     @classmethod
     def validate_secret_key_length(cls, v: str) -> str:
-        if v != "change-me" and len(v) < 16:
-            raise ValueError("SECRET_KEY 长度应不少于 16 个字符")
+        if v != "change-me" and len(v) < 32:
+            raise ValueError("SECRET_KEY 长度应不少于 32 个字符")
         return v
 
     model_config = SettingsConfigDict(env_file=ENV_FILE, extra="ignore")

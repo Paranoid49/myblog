@@ -21,7 +21,7 @@ export default function PublicAuthorPage() {
   }, []);
 
   return (
-    <PublicLayout title="关于作者" description="站点作者的基本资料与联系方式。" blogTitle={author?.blog_title || ''}>
+    <PublicLayout title="关于作者" description="站点作者的基本资料与联系方式。">
       <p className="mb-lg">
         <Link to="/" className="nav-link">← 返回首页</Link>
       </p>

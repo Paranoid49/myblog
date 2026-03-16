@@ -37,3 +37,9 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF"]
+ignore = [
+    "RUF001",  # 中文项目允许字符串中的全角字符
+    "RUF002",  # 中文项目允许文档字符串中的全角字符
+    "RUF003",  # 中文项目允许注释中的全角字符
+    "B008",    # FastAPI 惯用法：Depends() 等作为默认参数
+]

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../shared/layout/AdminLayout';
+import Pagination from '../../shared/components/Pagination';
 import AdminPostEditor from '../components/AdminPostEditor';
 import AdminPostFilters from '../components/AdminPostFilters';
 import AdminPostList from '../components/AdminPostList';
@@ -17,6 +18,9 @@ export default function AdminPostsPage() {
     previewMode,
     form,
     selectedTagIds,
+    page,
+    totalPages,
+    setPage,
     setPreviewMode,
     resetForm,
     fillForEdit,
@@ -26,6 +30,7 @@ export default function AdminPostsPage() {
     uploadImage,
     publishPost,
     unpublishPost,
+    deletePost,
     applyFilter,
     handleFieldChange,
     handleToggleTag,
@@ -52,7 +57,9 @@ export default function AdminPostsPage() {
 
       <AdminPostFilters filter={filter} taxonomy={taxonomy} onApplyFilter={applyFilter} />
 
-      <AdminPostList posts={posts} onEdit={fillForEdit} onExport={exportMarkdown} onPublish={publishPost} onUnpublish={unpublishPost} />
+      <AdminPostList posts={posts} onEdit={fillForEdit} onExport={exportMarkdown} onPublish={publishPost} onUnpublish={unpublishPost} onDelete={deletePost} />
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </AdminLayout>
   );
 }

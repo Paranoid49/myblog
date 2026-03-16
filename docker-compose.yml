@@ -10,4 +10,9 @@ services:
     environment:
       - ENVIRONMENT=production
       - DATABASE_URL=sqlite:////app/data/myblog.db
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped

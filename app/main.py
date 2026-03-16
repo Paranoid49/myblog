@@ -2,6 +2,13 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+# 版本号单一来源：优先从包元数据读取，回退到硬编码默认值
+try:
+    from importlib.metadata import version as get_version
+    APP_VERSION = get_version("myblog")
+except Exception:
+    APP_VERSION = "1.0.0"
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -10,25 +17,25 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
 from app.core.db import SessionLocal
-from app.core.error_codes import SITE_NOT_INITIALIZED
+from app.core.error_codes import REQUEST_TOO_LARGE, SITE_NOT_INITIALIZED
 from app.core.exceptions import AppError
 from app.core.extension_loader import load_extensions
 from app.core.logging_config import setup_logging
+from app.routes.api_v1_admin_posts import router as api_v1_admin_posts_router
+from app.routes.api_v1_admin_taxonomy import router as api_v1_admin_taxonomy_router
+from app.routes.api_v1_auth import router as api_v1_auth_router
+from app.routes.api_v1_author import router as api_v1_author_router
+from app.routes.api_v1_media import router as api_v1_media_router
+from app.routes.api_v1_posts import router as api_v1_posts_router
+from app.routes.api_v1_setup import router as api_v1_setup_router
+from app.routes.api_v1_taxonomy import router as api_v1_taxonomy_router
+from app.routes.feed import router as feed_router
 from app.schemas.api_response import build_error_detail
+from app.services.setup_service import is_initialized
 
 setup_logging(settings.environment)
 
 logger = logging.getLogger(__name__)
-
-from app.routes.api_v1_admin_posts import router as api_v1_admin_posts_router
-from app.routes.api_v1_auth import router as api_v1_auth_router
-from app.routes.api_v1_author import router as api_v1_author_router
-from app.routes.api_v1_posts import router as api_v1_posts_router
-from app.routes.api_v1_setup import router as api_v1_setup_router
-from app.routes.api_v1_taxonomy import router as api_v1_taxonomy_router
-from app.routes.api_v1_media import router as api_v1_media_router
-from app.routes.feed import router as feed_router
-from app.services.setup_service import is_initialized
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -42,12 +49,11 @@ if _failed_extensions:
 
 # 生产环境禁止使用默认密钥
 if settings.environment == "production" and settings.secret_key == "change-me":
-    raise RuntimeError(
-        "生产环境禁止使用默认 SECRET_KEY，请在 .env 中配置安全的随机密钥"
-    )
+    raise RuntimeError("生产环境禁止使用默认 SECRET_KEY，请在 .env 中配置安全的随机密钥")
 
 if settings.secret_key == "change-me":
     logger.warning("SECRET_KEY 使用默认值 'change-me'，生产环境请在 .env 中配置安全的密钥")
+
 
 @asynccontextmanager
 async def lifespan(app_instance: FastAPI):
@@ -55,12 +61,19 @@ async def lifespan(app_instance: FastAPI):
     logger.info("myblog 启动完成")
     yield
     from app.core.db import engine
+
     engine.dispose()
     logger.info("myblog 已关闭，数据库连接已释放")
 
 
 app = FastAPI(title="myblog", lifespan=lifespan)
-app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.secret_key,
+    # 生产环境仅通过 HTTPS 传输 session cookie
+    https_only=settings.environment == "production",
+    same_site="lax",
+)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 if FRONTEND_DIST_DIR.exists():
     app.mount("/assets", StaticFiles(directory=FRONTEND_DIST_DIR / "assets"), name="frontend-assets")
@@ -70,8 +83,11 @@ app.include_router(api_v1_author_router)
 app.include_router(api_v1_posts_router)
 app.include_router(api_v1_admin_posts_router)
 app.include_router(api_v1_taxonomy_router)
+app.include_router(api_v1_admin_taxonomy_router)
 app.include_router(api_v1_media_router)
 app.include_router(feed_router)
+
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     if isinstance(exc.detail, dict):
@@ -108,6 +124,7 @@ async def check_initialized_middleware(request: Request, call_next):
 
     # 先检查内存缓存，命中则跳过 DB session 创建
     from app.services.setup_service import _initialized_cache
+
     if _initialized_cache is True:
         return await call_next(request)
 
@@ -129,12 +146,23 @@ async def check_initialized_middleware(request: Request, call_next):
 async def security_headers_middleware(request: Request, call_next):
     """为所有响应添加安全头"""
     response = await call_next(request)
+    path = request.url.path
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    if request.url.path.startswith("/api/"):
+    if path.startswith("/api/"):
         response.headers["Content-Security-Policy"] = "default-src 'none'"
+    else:
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
+        )
+    # 静态资源缓存
+    if path.startswith(("/static/", "/assets/")):
+        response.headers["Cache-Control"] = "public, max-age=86400"
+    # 生产环境启用 HSTS
+    if settings.environment == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
 
@@ -143,19 +171,29 @@ async def spa_fallback_middleware(request: Request, call_next):
     """SPA 通用 fallback — 非 API/静态资源的未匹配路径返回 index.html"""
     response = await call_next(request)
     path = request.url.path
-    if (
-        response.status_code == 404
-        and not path.startswith(("/api/", "/static/", "/assets/", "/health", "/feed.xml"))
-    ):
+    if response.status_code == 404 and not path.startswith(("/api/", "/static/", "/assets/", "/health", "/feed.xml")):
         index_file = FRONTEND_DIST_DIR / "index.html"
         if index_file.exists():
             return FileResponse(index_file)
     return response
 
 
+@app.middleware("http")
+async def request_size_limit_middleware(request: Request, call_next):
+    """限制非上传接口的请求体大小（1MB），防止恶意大请求"""
+    if not request.url.path.startswith("/api/v1/admin/media"):
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > 1_048_576:
+            return JSONResponse(
+                status_code=413,
+                content=build_error_detail("request_too_large", REQUEST_TOO_LARGE),
+            )
+    return await call_next(request)
+
+
 @app.get("/health")
 def health() -> dict:
-    """健康检查，包含数据库连通性验证"""
+    """健康检查，包含数据库连通性和版本信息"""
     try:
         with SessionLocal() as db:
             db.execute(text("SELECT 1"))
@@ -165,4 +203,5 @@ def health() -> dict:
     return {
         "status": "ok" if db_status == "ok" else "degraded",
         "database": db_status,
+        "version": APP_VERSION,
     }

@@ -48,3 +48,13 @@ def slugify(value: str) -> str:
     slug = "-".join(chunk for chunk in chunks if chunk)
     slug = re.sub(r"-+", "-", slug).strip("-")
     return slug or "post"
+
+
+def ensure_unique_slug(base_slug: str, existing_slugs: set[str]) -> str:
+    """确保 slug 唯一，冲突时添加数字后缀"""
+    if base_slug not in existing_slugs:
+        return base_slug
+    index = 2
+    while f"{base_slug}-{index}" in existing_slugs:
+        index += 1
+    return f"{base_slug}-{index}"

@@ -10,10 +10,7 @@ import sys
 def setup_logging(environment: str = "development") -> None:
     """根据环境配置日志格式"""
     if environment == "production":
-        log_format = (
-            '{"time":"%(asctime)s","level":"%(levelname)s",'
-            '"logger":"%(name)s","message":"%(message)s"}'
-        )
+        log_format = '{"time":"%(asctime)s","level":"%(levelname)s","logger":"%(name)s","message":"%(message)s"}'
     else:
         log_format = "%(asctime)s %(levelname)-8s %(name)s  %(message)s"
 

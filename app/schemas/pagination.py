@@ -1,9 +1,7 @@
 """分页工具模块。"""
 
 
-def build_paginated_data(
-    items: list, total: int, page: int, page_size: int
-) -> dict:
+def build_paginated_data(items: list, total: int, page: int, page_size: int) -> dict:
     """构建分页响应数据"""
     return {
         "items": items,

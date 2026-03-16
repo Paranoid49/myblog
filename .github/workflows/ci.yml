@@ -4,11 +4,14 @@ on: [push, pull_request]
 jobs:
   backend-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python-version }}
       - run: pip install -r requirements.txt
       - run: pytest --cov=app --cov-report=term-missing --cov-fail-under=80
 
@@ -19,7 +22,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: cd frontend && npm ci && npm run lint && npm test
+      - name: 安装依赖
+        working-directory: frontend
+        run: npm ci
+      - name: Lint 检查
+        working-directory: frontend
+        run: npm run lint
+      - name: 运行测试
+        working-directory: frontend
+        run: npm test
 
   backend-lint:
     runs-on: ubuntu-latest
@@ -31,3 +42,18 @@ jobs:
       - run: pip install ruff
       - run: ruff check app/ tests/
       - run: ruff format --check app/ tests/
+
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Python 依赖审计
+        run: pip install pip-audit && pip-audit -r requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: NPM 依赖审计
+        run: cd frontend && npm audit --audit-level=moderate || true

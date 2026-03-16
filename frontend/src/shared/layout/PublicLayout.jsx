@@ -1,8 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 import { getAdminEntryPath } from '../auth/session';
 import { useTheme } from '../theme/ThemeProvider';
+import { useSite } from '../site/SiteProvider';
 
-export default function PublicLayout({ title, description, blogTitle, children }) {
+export default function PublicLayout({ title, description, children }) {
+  const { blogTitle } = useSite();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
 

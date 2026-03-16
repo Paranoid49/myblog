@@ -30,16 +30,20 @@ class CsrfTestClient(TestClient):
     def delete(self, *args, **kwargs):
         return super().delete(*args, **self._inject_csrf(kwargs))
 
-os.environ["DATABASE_URL"] = "sqlite:///./test.db"
-os.environ["SECRET_KEY"] = "test-secret-key!"
 
-import app.models  # noqa: F401
-from app.core.db import Base, get_db
-from app.core.database_provider import create_app_engine
-from app.main import app as fastapi_app
-from app.models import Category, Post, SiteSettings, Tag
-from app.services.auth_service import build_admin_user
-from app.services.setup_service import clear_initialized_cache
+os.environ["DATABASE_URL"] = "sqlite:///./test.db"
+os.environ["SECRET_KEY"] = "test-secret-key-for-myblog-unit-tests!"
+
+import app.models  # noqa: E402, F401
+from app.core.database_provider import create_app_engine  # noqa: E402
+from app.core.db import Base, get_db  # noqa: E402
+from app.main import app as fastapi_app  # noqa: E402
+from app.models import Category, Post, SiteSettings, Tag  # noqa: E402
+
+# 导入 feed 缓存，用于测试间清理
+from app.routes.feed import _feed_cache  # noqa: E402
+from app.services.auth_service import build_admin_user  # noqa: E402
+from app.services.setup_service import clear_initialized_cache  # noqa: E402
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
 engine = create_app_engine(TEST_DATABASE_URL)
@@ -64,6 +68,9 @@ def setup_database() -> Generator[None, None, None]:
 def db_session(setup_database: None) -> Generator[Session, None, None]:
     """每个测试前清空所有表数据（保留表结构），比 drop_all/create_all 更快"""
     clear_initialized_cache()
+    # 清除 RSS feed 缓存，避免测试间互相干扰
+    _feed_cache["xml"] = None
+    _feed_cache["expires"] = 0
     session = TestingSessionLocal()
     try:
         # 按外键依赖顺序清空数据，避免 drop_all/create_all 的开销

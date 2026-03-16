@@ -1,22 +1,32 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Category, Tag
 from app.utils.text import slugify
 
+if TYPE_CHECKING:
+    from app.models import Post
+
 
 def list_taxonomy(db: Session) -> tuple[list[Category], list[Tag]]:
+    """查询所有分类和标签，按名称排序返回。"""
     categories = list(db.execute(select(Category).order_by(Category.name.asc())).scalars().all())
     tags = list(db.execute(select(Tag).order_by(Tag.name.asc())).scalars().all())
     return categories, tags
 
 
 def get_category_by_slug(db: Session, slug: str) -> Category | None:
+    """根据 slug 查询分类（含关联文章），不存在返回 None。"""
     stmt = select(Category).options(selectinload(Category.posts)).where(Category.slug == slug)
     return db.execute(stmt).scalar_one_or_none()
 
 
 def get_tag_by_slug(db: Session, slug: str) -> Tag | None:
+    """根据 slug 查询标签（含关联文章），不存在返回 None。"""
     stmt = select(Tag).options(selectinload(Tag.posts)).where(Tag.slug == slug)
     return db.execute(stmt).scalar_one_or_none()
 
@@ -41,9 +51,10 @@ def create_tag(db: Session, name: str) -> Tag:
 
 def get_published_posts_by_category(
     db: Session, slug: str, page: int = 1, page_size: int = 20
-) -> tuple[Category | None, list["Post"], int]:
+) -> tuple[Category | None, list[Post], int]:
     """按分类查询已发布文章（数据库层过滤+分页）"""
     from app.models import Post
+
     category = db.execute(select(Category).where(Category.slug == slug)).scalar_one_or_none()
     if not category:
         return None, [], 0
@@ -54,20 +65,19 @@ def get_published_posts_by_category(
     )
     total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
     posts = list(
-        db.execute(
-            base.order_by(Post.published_at.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        ).scalars().all()
+        db.execute(base.order_by(Post.published_at.desc()).offset((page - 1) * page_size).limit(page_size))
+        .scalars()
+        .all()
     )
     return category, posts, total
 
 
 def get_published_posts_by_tag(
     db: Session, slug: str, page: int = 1, page_size: int = 20
-) -> tuple["Tag | None", list["Post"], int]:
+) -> tuple[Tag | None, list[Post], int]:
     """按标签查询已发布文章（数据库层过滤+分页）"""
     from app.models import Post, post_tags
+
     tag = db.execute(select(Tag).where(Tag.slug == slug)).scalar_one_or_none()
     if not tag:
         return None, [], 0
@@ -78,11 +88,9 @@ def get_published_posts_by_tag(
     )
     total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
     posts = list(
-        db.execute(
-            base.order_by(Post.published_at.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        ).scalars().all()
+        db.execute(base.order_by(Post.published_at.desc()).offset((page - 1) * page_size).limit(page_size))
+        .scalars()
+        .all()
     )
     return tag, posts, total
 
@@ -99,6 +107,7 @@ def update_category(db: Session, category: Category, new_name: str) -> Category:
 def delete_category(db: Session, category: Category) -> None:
     """删除分类，关联文章迁移至默认分类"""
     from app.services.post_service import resolve_category_id
+
     default_id = resolve_category_id(db, None)
     # 将该分类下的文章迁移到默认分类
     for post in category.posts:

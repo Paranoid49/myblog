@@ -22,3 +22,16 @@ class SetupRequest(BaseModel):
         if not value.strip():
             raise ValueError("must_not_be_blank")
         return value
+
+    @field_validator("password")
+    @classmethod
+    def _password_complexity(cls, value: str) -> str:
+        """密码复杂度校验：至少 8 个字符，且同时包含字母和数字"""
+        v = value.strip()
+        if len(v) < 8:
+            raise ValueError("password_too_short")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("password_needs_digit")
+        if not any(c.isalpha() for c in v):
+            raise ValueError("password_needs_letter")
+        return value

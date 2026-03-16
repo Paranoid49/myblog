@@ -5,12 +5,11 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from unittest.mock import patch
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
-from unittest.mock import patch
 
 import pytest
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TIMEOUT = 30.0
@@ -59,7 +58,7 @@ def test_admin_posts_redirects_to_login_and_returns_after_login(tmp_path) -> Non
     env = {
         **os.environ,
         "DATABASE_URL": f"sqlite:///{database_path}",
-        "SECRET_KEY": "test-secret-key!",
+        "SECRET_KEY": "test-secret-key-for-myblog-unit-tests!",
     }
 
     backend_process = subprocess.Popen(
@@ -125,7 +124,7 @@ def test_logout_redirects_back_to_admin_login(tmp_path) -> None:
     env = {
         **os.environ,
         "DATABASE_URL": f"sqlite:///{database_path}",
-        "SECRET_KEY": "test-secret-key!",
+        "SECRET_KEY": "test-secret-key-for-myblog-unit-tests!",
     }
 
     backend_process = subprocess.Popen(

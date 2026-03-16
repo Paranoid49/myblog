@@ -592,6 +592,22 @@ textarea:focus-visible {
 .not-found-code { font-size: 4rem; margin-bottom: 1rem; color: var(--text-muted); }
 .not-found-message { color: var(--text-dim); }
 
+/* === 分页 === */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    margin-top: var(--space-xl);
+    padding: var(--space-md) 0;
+}
+
+.pagination-info {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+}
+
 /* === 骨架屏 === */
 .skeleton-line {
     background: var(--border);

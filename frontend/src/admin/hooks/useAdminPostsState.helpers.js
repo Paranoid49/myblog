@@ -1,12 +1,13 @@
 export const EMPTY_FILTER = { category_id: '', tag_id: '' };
 export const EMPTY_FORM = { id: null, title: '', summary: '', content: '', category_id: '', tag_ids: [] };
 
-export function toQuery(filter) {
+export function toQuery(filter, page = 1, pageSize = 20) {
   const url = new URLSearchParams();
+  url.set('page', String(page));
+  url.set('page_size', String(pageSize));
   if (filter.category_id) url.set('category_id', String(filter.category_id));
   if (filter.tag_id) url.set('tag_id', String(filter.tag_id));
-  const query = url.toString();
-  return query ? `?${query}` : '';
+  return `?${url.toString()}`;
 }
 
 export function toPostPayload(form) {

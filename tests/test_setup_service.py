@@ -5,8 +5,8 @@ import pytest
 
 from app.core.config import PROJECT_ROOT
 from app.core.db import Base
-from app.models import SiteSettings
 from app.core.security import verify_password
+from app.models import SiteSettings
 from app.services.auth_service import build_admin_user
 from app.services.migration_service import upgrade_database
 from app.services.setup_service import (

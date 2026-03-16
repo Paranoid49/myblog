@@ -1,4 +1,3 @@
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -69,6 +68,6 @@ def test_start_fullstack_exits_when_npm_missing() -> None:
     with (
         patch("scripts.start_fullstack.subprocess.Popen", return_value=backend),
         patch("scripts.start_fullstack._resolve_npm_command", side_effect=RuntimeError("npm_not_found_in_path")),
+        pytest.raises(SystemExit),
     ):
-        with pytest.raises(SystemExit):
-            main([])
+        main([])

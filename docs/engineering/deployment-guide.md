@@ -140,3 +140,56 @@ pg_dump -U user myblog > myblog_backup.sql
 | ENVIRONMENT | 否 | development | 运行环境 |
 | DATABASE_URL | 否 | sqlite:///myblog.db | 数据库连接 |
 | EXTENSION_MODULES | 否 | (空) | 扩展模块路径 |
+
+## 七、HTTPS 配置
+
+生产环境强烈建议启用 HTTPS。推荐使用 Let's Encrypt 免费证书。
+
+### Nginx + Certbot
+
+```bash
+# 安装 certbot
+sudo apt install certbot python3-certbot-nginx
+
+# 获取证书
+sudo certbot --nginx -d blog.example.com
+
+# 自动续期
+sudo systemctl enable certbot.timer
+```
+
+Nginx 配置中 certbot 会自动添加 SSL 相关指令。应用层已内置 HSTS 头（生产环境自动启用）。
+
+## 八、日志管理
+
+### Docker 部署
+
+Docker 默认使用 `json-file` 日志驱动。建议配置日志大小限制：
+
+```yaml
+# docker-compose.yml
+services:
+  myblog:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+```
+
+### systemd 部署
+
+日志由 journald 管理，可通过以下命令查看：
+
+```bash
+# 查看最近日志
+journalctl -u myblog -n 100
+
+# 跟踪实时日志
+journalctl -u myblog -f
+
+# 按时间筛选
+journalctl -u myblog --since "2026-03-16"
+```
+
+journald 默认配置日志轮转，可在 `/etc/systemd/journald.conf` 中调整 `SystemMaxUse` 控制总大小。

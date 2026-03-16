@@ -12,6 +12,9 @@ export default function AdminTaxonomyPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
+  // 正在编辑的项：{ type: 'category'|'tag', id, name }
+  const [editing, setEditing] = useState(null);
+
   async function loadTaxonomy() {
     const data = await apiRequest('/taxonomy');
     setCategories(data.categories || []);
@@ -58,6 +61,89 @@ export default function AdminTaxonomyPage() {
     }
   }
 
+  // 进入编辑状态
+  function startEditing(type, item) {
+    setEditing({ type, id: item.id, name: item.name });
+  }
+
+  // 取消编辑
+  function cancelEditing() {
+    setEditing(null);
+  }
+
+  // 提交重命名
+  async function submitRename() {
+    if (!editing || !editing.name.trim()) return;
+    setError('');
+    setMessage('');
+    const endpoint = editing.type === 'category'
+      ? `/admin/categories/${editing.id}`
+      : `/admin/tags/${editing.id}`;
+    try {
+      await apiRequest(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editing.name }),
+      });
+      setMessage(editing.type === 'category' ? '分类已重命名' : '标签已重命名');
+      setEditing(null);
+      await loadTaxonomy();
+    } catch (e) {
+      setError(e.message || 'rename_failed');
+    }
+  }
+
+  // 删除分类或标签
+  async function handleDelete(type, id) {
+    if (!window.confirm('确定删除？')) return;
+    setError('');
+    setMessage('');
+    const endpoint = type === 'category'
+      ? `/admin/categories/${id}/delete`
+      : `/admin/tags/${id}/delete`;
+    try {
+      await apiRequest(endpoint, { method: 'POST' });
+      setMessage(type === 'category' ? '分类已删除' : '标签已删除');
+      await loadTaxonomy();
+    } catch (e) {
+      setError(e.message || 'delete_failed');
+    }
+  }
+
+  // 渲染单个列表项（普通状态 / 编辑状态）
+  function renderItem(type, item) {
+    const isEditing = editing && editing.type === type && editing.id === item.id;
+
+    if (isEditing) {
+      return (
+        <div key={item.id} className="simple-list-item">
+          <input
+            value={editing.name}
+            onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+            autoFocus
+          />
+          <div className="inline-actions">
+            <button type="button" className="ghost-button" onClick={submitRename}>保存</button>
+            <button type="button" className="ghost-button" onClick={cancelEditing}>取消</button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div key={item.id} className="simple-list-item">
+        <div>
+          <strong>{item.name}</strong>
+          <span className="muted">{item.slug}</span>
+        </div>
+        <div className="inline-actions">
+          <button type="button" className="ghost-button" onClick={() => startEditing(type, item)}>编辑</button>
+          <button type="button" className="ghost-button" onClick={() => handleDelete(type, item.id)}>删除</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AdminLayout title="分类与标签" description="维护文章组织结构，让首页和详情页展示更完整。" navigate={navigate}>
       {error ? <div className="notice error">{error}</div> : null}
@@ -84,23 +170,13 @@ export default function AdminTaxonomyPage() {
         <article className="panel-card">
           <h3>分类列表</h3>
           <div className="simple-list">
-            {categories.map((item) => (
-              <div key={item.id} className="simple-list-item">
-                <strong>{item.name}</strong>
-                <span className="muted">{item.slug}</span>
-              </div>
-            ))}
+            {categories.map((item) => renderItem('category', item))}
           </div>
         </article>
         <article className="panel-card">
           <h3>标签列表</h3>
           <div className="simple-list">
-            {tags.map((item) => (
-              <div key={item.id} className="simple-list-item">
-                <strong>{item.name}</strong>
-                <span className="muted">{item.slug}</span>
-              </div>
-            ))}
+            {tags.map((item) => renderItem('tag', item))}
           </div>
         </article>
       </section>

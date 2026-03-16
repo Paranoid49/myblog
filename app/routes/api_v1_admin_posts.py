@@ -13,9 +13,9 @@ from app.schemas.api_response import ApiResponse, ok_response
 from app.schemas.pagination import build_paginated_data
 from app.schemas.post import AdminPostWriteRequest, ImportMarkdownRequest
 from app.schemas.serializers import serialize_post
+from app.services.markdown_service import build_markdown_export
 from app.services.post_service import (
     PostNotFoundError,
-    build_markdown_export,
     build_post_create_payload,
     build_post_from_import_markdown,
     delete_post,
@@ -32,7 +32,7 @@ router = APIRouter(prefix="/api/v1", tags=["api-v1-admin-posts"])
 # 后台文章管理接口
 
 
-@router.get("/admin/posts", response_model=ApiResponse)
+@router.get("/admin/posts", response_model=ApiResponse, summary="获取后台文章列表")
 def list_admin_posts_api(
     category_id: int | None = None,
     tag_id: int | None = None,
@@ -42,14 +42,10 @@ def list_admin_posts_api(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     posts, total = list_admin_posts(db, category_id, tag_id, page, page_size)
-    return ok_response(
-        build_paginated_data(
-            [serialize_post(post) for post in posts], total, page, page_size
-        )
-    )
+    return ok_response(build_paginated_data([serialize_post(post) for post in posts], total, page, page_size))
 
 
-@router.post("/admin/posts", response_model=ApiResponse)
+@router.post("/admin/posts", response_model=ApiResponse, summary="创建文章")
 def create_admin_post_api(
     payload: AdminPostWriteRequest,
     current_admin: User = Depends(get_current_admin),
@@ -71,7 +67,7 @@ def create_admin_post_api(
 # markdown 导入/导出
 
 
-@router.post("/admin/posts/import-markdown", response_model=ApiResponse)
+@router.post("/admin/posts/import-markdown", response_model=ApiResponse, summary="导入 Markdown 文章")
 def import_markdown_post_api(
     payload: ImportMarkdownRequest,
     current_admin: User = Depends(get_current_admin),
@@ -83,7 +79,7 @@ def import_markdown_post_api(
     return ok_response(serialize_post(post), status_code=status.HTTP_201_CREATED)
 
 
-@router.post("/admin/posts/{post_id}", response_model=ApiResponse)
+@router.post("/admin/posts/{post_id}", response_model=ApiResponse, summary="更新文章")
 def update_admin_post_api(
     post_id: int,
     payload: AdminPostWriteRequest,
@@ -94,7 +90,7 @@ def update_admin_post_api(
     try:
         post = get_post_or_raise(db, post_id)
     except PostNotFoundError:
-        raise NotFoundError("post_not_found", POST_NOT_FOUND)
+        raise NotFoundError("post_not_found", POST_NOT_FOUND) from None
 
     data, tags = build_post_create_payload(
         db,
@@ -108,7 +104,7 @@ def update_admin_post_api(
     return ok_response(serialize_post(post))
 
 
-@router.get("/admin/posts/{post_id}/export-markdown", response_model=ApiResponse)
+@router.get("/admin/posts/{post_id}/export-markdown", response_model=ApiResponse, summary="导出文章为 Markdown")
 def export_markdown_post_api(
     post_id: int,
     current_admin: User = Depends(get_current_admin),
@@ -117,7 +113,7 @@ def export_markdown_post_api(
     try:
         post = get_post_or_raise(db, post_id)
     except PostNotFoundError:
-        raise NotFoundError("post_not_found", POST_NOT_FOUND)
+        raise NotFoundError("post_not_found", POST_NOT_FOUND) from None
 
     return ok_response(build_markdown_export(post))
 
@@ -125,7 +121,7 @@ def export_markdown_post_api(
 # 发布工作流
 
 
-@router.post("/admin/posts/{post_id}/publish", response_model=ApiResponse)
+@router.post("/admin/posts/{post_id}/publish", response_model=ApiResponse, summary="发布文章")
 def publish_post_api(
     post_id: int,
     current_admin: User = Depends(get_current_admin),
@@ -135,13 +131,13 @@ def publish_post_api(
     try:
         post = get_post_or_raise(db, post_id)
     except PostNotFoundError:
-        raise NotFoundError("post_not_found", POST_NOT_FOUND)
+        raise NotFoundError("post_not_found", POST_NOT_FOUND) from None
 
     post = save_publish(db, post)
     return ok_response(serialize_post(post))
 
 
-@router.post("/admin/posts/{post_id}/unpublish", response_model=ApiResponse)
+@router.post("/admin/posts/{post_id}/unpublish", response_model=ApiResponse, summary="取消发布文章")
 def unpublish_post_api(
     post_id: int,
     current_admin: User = Depends(get_current_admin),
@@ -151,13 +147,13 @@ def unpublish_post_api(
     try:
         post = get_post_or_raise(db, post_id)
     except PostNotFoundError:
-        raise NotFoundError("post_not_found", POST_NOT_FOUND)
+        raise NotFoundError("post_not_found", POST_NOT_FOUND) from None
 
     post = save_unpublish(db, post)
     return ok_response(serialize_post(post))
 
 
-@router.post("/admin/posts/{post_id}/delete", response_model=ApiResponse)
+@router.post("/admin/posts/{post_id}/delete", response_model=ApiResponse, summary="删除文章")
 def delete_post_api(
     post_id: int,
     current_admin: User = Depends(get_current_admin),
@@ -167,6 +163,6 @@ def delete_post_api(
     try:
         post = get_post_or_raise(db, post_id)
     except PostNotFoundError:
-        raise NotFoundError("post_not_found", POST_NOT_FOUND)
+        raise NotFoundError("post_not_found", POST_NOT_FOUND) from None
     delete_post(db, post)
     return ok_response(None)

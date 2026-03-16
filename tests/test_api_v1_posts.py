@@ -1,3 +1,5 @@
+import io
+
 from app.models import Category, Post, Tag
 
 
@@ -366,3 +368,15 @@ def test_api_upload_image_rejects_invalid_type(client, logged_in_admin) -> None:
     assert response.status_code == 400
     payload = response.json()
     assert payload["code"] == 1411
+
+
+def test_upload_image_rejects_mismatched_content_type(client, logged_in_admin):
+    """声明 JPEG 但实际为 PNG 的上传被拒绝"""
+    # PNG magic bytes
+    png_header = b'\x89PNG\r\n\x1a\n' + b'\x00' * 100
+    file = io.BytesIO(png_header)
+    resp = client.post(
+        "/api/v1/admin/media/images",
+        files={"file": ("test.jpg", file, "image/jpeg")},  # 声明 JPEG 但内容是 PNG
+    )
+    assert resp.status_code == 400

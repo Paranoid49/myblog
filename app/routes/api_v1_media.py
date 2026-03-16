@@ -1,3 +1,4 @@
+import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, UploadFile, status
@@ -11,7 +12,6 @@ from app.core.exceptions import AppError
 from app.core.hook_bus import hook_bus
 from app.models import User
 from app.schemas.api_response import ApiResponse, ok_response
-from app.utils.text import slugify
 
 router = APIRouter(prefix="/api/v1", tags=["api-v1-media"])
 
@@ -26,10 +26,10 @@ IMAGE_EXTENSION_BY_TYPE = {
 ALLOWED_IMAGE_TYPES = set(IMAGE_EXTENSION_BY_TYPE)
 
 MAGIC_BYTES_MAP = {
-    b'\xff\xd8\xff': "image/jpeg",
-    b'\x89PNG\r\n\x1a\n': "image/png",
-    b'GIF87a': "image/gif",
-    b'GIF89a': "image/gif",
+    b"\xff\xd8\xff": "image/jpeg",
+    b"\x89PNG\r\n\x1a\n": "image/png",
+    b"GIF87a": "image/gif",
+    b"GIF89a": "image/gif",
 }
 
 
@@ -61,9 +61,18 @@ async def upload_image_api(
     if content_type not in ALLOWED_IMAGE_TYPES:
         raise AppError("unsupported_image_type", UNSUPPORTED_IMAGE_TYPE, 400)
 
-    content = await file.read()
-    if len(content) > IMAGE_MAX_BYTES:
-        raise AppError("image_too_large", IMAGE_TOO_LARGE, 400)
+    # 分块读取并校验大小，避免一次性加载大文件到内存
+    chunks = []
+    total_size = 0
+    while True:
+        chunk = await file.read(8192)
+        if not chunk:
+            break
+        total_size += len(chunk)
+        if total_size > IMAGE_MAX_BYTES:
+            raise AppError("image_too_large", IMAGE_TOO_LARGE, 400)
+        chunks.append(chunk)
+    content = b"".join(chunks)
 
     # Magic bytes 校验：验证文件内容与声明的类型一致
     detected_type = detect_image_type(content)
@@ -75,7 +84,8 @@ async def upload_image_api(
         raise AppError("unsupported_image_type", UNSUPPORTED_IMAGE_TYPE, 400)
 
     ext = IMAGE_EXTENSION_BY_TYPE.get(content_type, ".img")
-    filename = f"{slugify(Path(file.filename or 'image').stem)}-{len(content)}{ext}"
+    # 使用 UUID 生成文件名，避免原始文件名泄露信息或引发路径注入
+    filename = f"{uuid.uuid4().hex}{ext}"
 
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     save_path = UPLOAD_DIR / filename

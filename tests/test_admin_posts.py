@@ -86,3 +86,23 @@ def test_admin_unpublish_post_returns_404_for_missing_post(client, logged_in_adm
     response = client.post("/api/v1/admin/posts/999999/unpublish")
 
     assert response.status_code == 404
+
+
+def test_admin_can_delete_post(client, logged_in_admin, seeded_category):
+    """管理员可以删除文章"""
+    resp = client.post("/api/v1/admin/posts", json={
+        "title": "待删除文章",
+        "content": "会被删除",
+        "category_id": seeded_category.id,
+        "tag_ids": [],
+    })
+    post_id = resp.json()["data"]["id"]
+    delete_resp = client.post(f"/api/v1/admin/posts/{post_id}/delete")
+    assert delete_resp.status_code == 200
+    assert delete_resp.json()["code"] == 0
+
+
+def test_admin_delete_post_returns_404_for_missing(client, logged_in_admin):
+    """删除不存在的文章返回 404"""
+    resp = client.post("/api/v1/admin/posts/99999/delete")
+    assert resp.status_code == 404

@@ -8,18 +8,10 @@ export default function PublicTaxonomyListPage({ type }) {
   const { slug } = useParams();
   const [payload, setPayload] = useState(null);
   const [error, setError] = useState('');
-  const [blogTitle, setBlogTitle] = useState('');
 
   const isCategory = type === 'category';
   const apiPath = isCategory ? 'categories' : 'tags';
   const label = isCategory ? '分类' : '标签';
-
-  useEffect(() => {
-    // 获取博客标题
-    apiRequest('/author')
-      .then((data) => setBlogTitle(data?.blog_title || ''))
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (!slug) return;
@@ -37,7 +29,6 @@ export default function PublicTaxonomyListPage({ type }) {
     <PublicLayout
       title={taxonomy?.name || `${label}文章`}
       description={taxonomy ? `${label}：${isCategory ? '' : '#'}${taxonomy.name}` : `按${label}浏览文章。`}
-      blogTitle={blogTitle}
     >
       <p className="mb-lg">
         <Link to="/" className="nav-link">← 返回首页</Link>

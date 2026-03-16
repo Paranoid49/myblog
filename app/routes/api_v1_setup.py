@@ -16,7 +16,7 @@ from app.core.error_codes import (
 )
 from app.core.exceptions import AppError, ConflictError
 from app.schemas.api_response import ApiResponse, ok_response
-from app.schemas.setup import SetupRequest, SetupStatusResponse
+from app.schemas.setup import SetupRequest
 from app.services.database_bootstrap_service import (
     DatabaseBootstrapError,
     UnsupportedDatabaseBootstrapError,
@@ -29,8 +29,6 @@ from app.services.setup_service import SetupAlreadyInitializedError, initialize_
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/setup", tags=["setup"])
-
-
 
 
 # setup 阶段数据库可能尚未完成迁移，get_db 依赖的表结构可能不存在，因此使用独立的 session 管理。
@@ -65,25 +63,24 @@ def perform_setup(request: Request, data: SetupRequest, _csrf: None = Depends(re
     if data.password != data.confirm_password:
         raise AppError("password_mismatch", SETUP_PASSWORD_MISMATCH, 400)
 
-    if not database_exists():
-        if _should_bootstrap_database():
-            try:
-                ensure_database_exists(settings.database_url)
-            except (DatabaseBootstrapError, UnsupportedDatabaseBootstrapError) as e:
-                logger.exception("数据库自动创建失败")
-                raise AppError("database_bootstrap_failed", SETUP_DATABASE_BOOTSTRAP_FAILED, 500)
+    if not database_exists() and _should_bootstrap_database():
+        try:
+            ensure_database_exists(settings.database_url)
+        except (DatabaseBootstrapError, UnsupportedDatabaseBootstrapError):
+            logger.exception("数据库自动创建失败")
+            raise AppError("database_bootstrap_failed", SETUP_DATABASE_BOOTSTRAP_FAILED, 500) from None
 
     try:
         upgrade_database()
-    except Exception as e:
+    except Exception:
         logger.exception("数据库迁移失败")
-        raise AppError("migration_failed", SETUP_MIGRATION_FAILED, 500)
+        raise AppError("migration_failed", SETUP_MIGRATION_FAILED, 500) from None
 
     with _create_session() as db:
         try:
             user = initialize_site(db=db, blog_title=data.blog_title, username=data.username, password=data.password)
         except SetupAlreadyInitializedError:
-            raise ConflictError("already_initialized", SETUP_ALREADY_INITIALIZED)
+            raise ConflictError("already_initialized", SETUP_ALREADY_INITIALIZED) from None
 
     request.session["user_id"] = user.id
     return ok_response({"user_id": user.id, "username": user.username})

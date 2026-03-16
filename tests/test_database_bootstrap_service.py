@@ -75,6 +75,8 @@ def test_ensure_database_exists_wraps_create_failures() -> None:
     engine = MagicMock()
     engine.begin.return_value = context_manager
 
-    with patch("app.services.database_bootstrap_service.create_engine", return_value=engine):
-        with pytest.raises(DatabaseBootstrapError):
-            ensure_database_exists("postgresql+psycopg://postgres:123456@localhost:5432/myblog")
+    with (
+        patch("app.services.database_bootstrap_service.create_engine", return_value=engine),
+        pytest.raises(DatabaseBootstrapError),
+    ):
+        ensure_database_exists("postgresql+psycopg://postgres:123456@localhost:5432/myblog")

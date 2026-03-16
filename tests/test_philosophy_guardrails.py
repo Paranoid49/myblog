@@ -13,13 +13,13 @@ from app.core.error_codes import (
 from app.main import app
 from app.models.site_settings import SiteSettings
 from app.routes.api_v1_admin_posts import router as admin_posts_router
+from app.routes.api_v1_admin_taxonomy import router as admin_taxonomy_router
 from app.routes.api_v1_auth import router as auth_router
 from app.routes.api_v1_media import IMAGE_EXTENSION_BY_TYPE, IMAGE_MAX_BYTES, IMAGE_RULES
 from app.routes.api_v1_posts import router as posts_router
 from app.routes.api_v1_setup import router as setup_router
 from app.routes.api_v1_taxonomy import router as taxonomy_router
 from app.schemas.api_response import error_response, ok_response
-from app.services.setup_service import clear_initialized_cache
 
 
 def test_default_database_stays_sqlite_baseline() -> None:
@@ -88,35 +88,35 @@ def test_auth_route_keeps_form_fields_declared() -> None:
 
 
 def test_setup_route_keeps_unified_response_shape(client) -> None:
-    response = client.get('/api/v1/setup/status')
+    response = client.get("/api/v1/setup/status")
 
     assert response.status_code == 200
     payload = response.json()
-    assert set(payload.keys()) == {'code', 'message', 'data'}
-    assert payload['code'] == 0
-    assert payload['message'] == 'ok'
+    assert set(payload.keys()) == {"code", "message", "data"}
+    assert payload["code"] == 0
+    assert payload["message"] == "ok"
 
 
 def test_setup_route_uses_registered_error_code_constants(client) -> None:
     mismatch = client.post(
-        '/api/v1/setup',
+        "/api/v1/setup",
         json={
-            'blog_title': '我的博客',
-            'username': 'admin',
-            'password': 'secret123',
-            'confirm_password': 'wrong',
+            "blog_title": "我的博客",
+            "username": "admin",
+            "password": "secret123",
+            "confirm_password": "wrong",
         },
     )
 
     assert mismatch.status_code == 400
-    assert mismatch.json()['code'] == SETUP_PASSWORD_MISMATCH
+    assert mismatch.json()["code"] == SETUP_PASSWORD_MISMATCH
 
 
 def test_setup_router_keeps_expected_paths_registered() -> None:
     setup_paths = {route.path for route in setup_router.routes}
 
-    assert '/api/v1/setup/status' in setup_paths
-    assert '/api/v1/setup' in setup_paths
+    assert "/api/v1/setup/status" in setup_paths
+    assert "/api/v1/setup" in setup_paths
 
 
 def test_setup_error_codes_keep_single_authority() -> None:
@@ -127,18 +127,18 @@ def test_setup_error_codes_keep_single_authority() -> None:
 
 
 def test_site_settings_keeps_minimal_boundary_fields() -> None:
-    assert SiteSettings.__tablename__ == 'site_settings'
+    assert SiteSettings.__tablename__ == "site_settings"
     field_names = set(SiteSettings.__table__.columns.keys())
     assert field_names == {
-        'id',
-        'blog_title',
-        'author_name',
-        'author_bio',
-        'author_email',
-        'author_avatar',
-        'author_link',
-        'created_at',
-        'updated_at',
+        "id",
+        "blog_title",
+        "author_name",
+        "author_bio",
+        "author_email",
+        "author_avatar",
+        "author_link",
+        "created_at",
+        "updated_at",
     }
 
 
@@ -151,42 +151,43 @@ def test_main_app_keeps_auth_router_registered() -> None:
 def test_posts_router_keeps_admin_and_public_boundaries_registered() -> None:
     post_paths = {route.path for route in posts_router.routes}
     admin_post_paths = {route.path for route in admin_posts_router.routes}
-    assert '/api/v1/posts' in post_paths
-    assert '/api/v1/posts/{slug}' in post_paths
-    assert '/api/v1/admin/posts' in admin_post_paths
-    assert '/api/v1/admin/posts/import-markdown' in admin_post_paths
-    assert '/api/v1/admin/posts/{post_id}/publish' in admin_post_paths
-    assert '/api/v1/admin/posts/{post_id}/unpublish' in admin_post_paths
+    assert "/api/v1/posts" in post_paths
+    assert "/api/v1/posts/{slug}" in post_paths
+    assert "/api/v1/admin/posts" in admin_post_paths
+    assert "/api/v1/admin/posts/import-markdown" in admin_post_paths
+    assert "/api/v1/admin/posts/{post_id}/publish" in admin_post_paths
+    assert "/api/v1/admin/posts/{post_id}/unpublish" in admin_post_paths
 
 
 def test_taxonomy_router_keeps_public_query_and_admin_create_boundaries() -> None:
     taxonomy_paths = {route.path for route in taxonomy_router.routes}
-    assert '/api/v1/categories/{slug}' in taxonomy_paths
-    assert '/api/v1/tags/{slug}' in taxonomy_paths
-    assert '/api/v1/taxonomy' in taxonomy_paths
-    assert '/api/v1/admin/categories' in taxonomy_paths
-    assert '/api/v1/admin/tags' in taxonomy_paths
+    admin_taxonomy_paths = {route.path for route in admin_taxonomy_router.routes}
+    assert "/api/v1/categories/{slug}" in taxonomy_paths
+    assert "/api/v1/tags/{slug}" in taxonomy_paths
+    assert "/api/v1/taxonomy" in admin_taxonomy_paths
+    assert "/api/v1/admin/categories" in admin_taxonomy_paths
+    assert "/api/v1/admin/tags" in admin_taxonomy_paths
 
 
 def test_core_regression_suite_keeps_high_value_commands_documented() -> None:
-    content = Path('docs/engineering/core-regression-suite.md').read_text(encoding='utf-8')
-    assert 'tests/test_philosophy_guardrails.py' in content
-    assert 'tests/test_api_v1_auth.py' in content
-    assert 'tests/test_api_v1_posts.py' in content
-    assert 'tests/test_admin_posts.py' in content
-    assert 'tests/test_hook_bus.py' in content
-    assert 'tests/test_extension_loader.py' in content
-    assert 'tests/test_database_provider.py' in content
+    content = Path("docs/engineering/core-regression-suite.md").read_text(encoding="utf-8")
+    assert "tests/test_philosophy_guardrails.py" in content
+    assert "tests/test_api_v1_auth.py" in content
+    assert "tests/test_api_v1_posts.py" in content
+    assert "tests/test_admin_posts.py" in content
+    assert "tests/test_hook_bus.py" in content
+    assert "tests/test_extension_loader.py" in content
+    assert "tests/test_database_provider.py" in content
 
 
 def test_docs_readme_keeps_single_source_document_governance() -> None:
-    content = Path('docs/README.md').read_text(encoding='utf-8')
-    assert '新增文档前，先判断现有文档是否可以补充' in content
-    assert '只保存历史材料' in content
+    content = Path("docs/README.md").read_text(encoding="utf-8")
+    assert "新增文档前，先判断现有文档是否可以补充" in content
+    assert "只保存历史材料" in content
 
 
 def test_long_term_guardrails_keep_hotspot_monitoring_targets_documented() -> None:
-    content = Path('docs/engineering/engineering-guardrails.md').read_text(encoding='utf-8')
-    assert 'app/routes/api_v1_posts.py' in content
-    assert 'frontend/src/admin/hooks/useAdminPostsState.js' in content
-    assert '触发收口' in content
+    content = Path("docs/engineering/engineering-guardrails.md").read_text(encoding="utf-8")
+    assert "app/routes/api_v1_posts.py" in content
+    assert "frontend/src/admin/hooks/useAdminPostsState.js" in content
+    assert "触发收口" in content

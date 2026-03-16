@@ -12,7 +12,8 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write src/",
-    "format:check": "prettier --check src/"
+    "format:check": "prettier --check src/",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -32,6 +33,7 @@
     "jsdom": "^25.0",
     "prettier": "^3.4",
     "vite": "^5.4.21",
+    "@vitest/coverage-v8": "^2.0",
     "vitest": "^2.0"
   }
 }

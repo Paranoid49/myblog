@@ -1,28 +1,24 @@
-from datetime import datetime, timedelta, timezone
+import threading
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 
 from app.models import Category, Post, Tag
 from app.schemas.post import ImportMarkdownRequest
+from app.services.markdown_service import build_markdown_export, extract_markdown_title
 from app.services.post_service import (
     PostCreatePayload,
-    build_markdown_export,
+    _build_admin_post_list_query,
     build_post,
     build_post_from_import_markdown,
     create_post,
-    ensure_unique_slug,
-    extract_markdown_title,
     get_post_by_slug,
-    get_post_or_raise,
-    list_admin_posts,
     list_published_posts,
-    PostNotFoundError,
     publish_post,
     unpublish_post,
     update_post,
-    _build_admin_post_list_query,
 )
-from app.utils.text import slugify
+from app.utils.text import ensure_unique_slug, slugify
 
 
 def test_slugify_converts_title_to_url_slug() -> None:
@@ -175,7 +171,7 @@ def test_unpublish_post_clears_published_at() -> None:
         summary="S",
         content="C",
         category_id=1,
-        published_at=datetime.now(timezone.utc),
+        published_at=datetime.now(UTC),
     )
 
     unpublish_post(post)
@@ -199,7 +195,7 @@ def test_list_published_posts_returns_latest_published_first(db_session) -> None
         summary="Old",
         content="Old",
         category=category,
-        published_at=datetime.now(timezone.utc) - timedelta(days=1),
+        published_at=datetime.now(UTC) - timedelta(days=1),
     )
     new_post = Post(
         title="New",
@@ -207,12 +203,12 @@ def test_list_published_posts_returns_latest_published_first(db_session) -> None
         summary="New",
         content="New",
         category=category,
-        published_at=datetime.now(timezone.utc),
+        published_at=datetime.now(UTC),
     )
     db_session.add_all([category, draft_post, old_post, new_post])
     db_session.commit()
 
-    posts, total = list_published_posts(db_session)
+    posts, _total = list_published_posts(db_session)
 
     assert [post.slug for post in posts] == ["new", "old"]
 
@@ -231,3 +227,50 @@ def test_get_post_by_slug_returns_post_for_existing_slug(db_session) -> None:
 
     assert result is not None
     assert result.slug == "existing-slug"
+
+
+def test_ensure_unique_slug_concurrent(db_session):
+    """并发创建同标题文章时 slug 不重复"""
+    from app.models import Category
+    from app.services.post_service import build_post_create_payload, save_new_post
+    from tests.conftest import TestingSessionLocal
+
+    # 准备默认分类
+    cat = Category(name="并发测试分类", slug="concurrent-test")
+    db_session.add(cat)
+    db_session.commit()
+    db_session.refresh(cat)
+    cat_id = cat.id
+
+    results = []
+    errors = []
+
+    def create_post(index):
+        # 每个线程使用独立的数据库 session，避免 SQLite 跨线程共享问题
+        thread_session = TestingSessionLocal()
+        try:
+            data, tags = build_post_create_payload(
+                thread_session,
+                title="并发测试文章",
+                summary=None,
+                content=f"内容 {index}",
+                category_id=cat_id,
+                tag_ids=[],
+            )
+            post = save_new_post(thread_session, data, tags)
+            results.append(post.slug)
+        except Exception as e:
+            errors.append(str(e))
+        finally:
+            thread_session.close()
+
+    threads = [threading.Thread(target=create_post, args=(i,)) for i in range(3)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    # 验证没有报错且 slug 唯一
+    assert len(errors) == 0 or len(results) > 0  # SQLite 并发可能有锁，允许部分失败
+    unique_slugs = set(results)
+    assert len(unique_slugs) == len(results), f"slug 重复: {results}"

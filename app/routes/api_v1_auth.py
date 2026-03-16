@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -11,8 +13,12 @@ from app.schemas.api_response import ApiResponse, ok_response
 from app.services.auth_service import authenticate_user
 from app.services.setup_service import is_initialized
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/v1/auth", tags=["api-v1-auth"])
-@router.post("/login", response_model=ApiResponse)
+
+
+@router.post("/login", response_model=ApiResponse, summary="管理员登录")
 def api_login(
     request: Request,
     username: str = Form(...),
@@ -26,6 +32,7 @@ def api_login(
     # 速率限制检查
     client_ip = request.client.host if request.client else "unknown"
     if login_limiter.is_blocked(client_ip):
+        logger.warning("登录速率限制触发: IP=%s", client_ip)
         raise TooManyRequestsError("too_many_attempts", TOO_MANY_ATTEMPTS)
 
     user = authenticate_user(db, username, password)
@@ -39,7 +46,7 @@ def api_login(
     return ok_response({"user_id": user.id, "username": user.username})
 
 
-@router.post("/logout", response_model=ApiResponse)
+@router.post("/logout", response_model=ApiResponse, summary="管理员退出登录")
 def api_logout(request: Request, _csrf: None = Depends(require_csrf_header)) -> JSONResponse:
     request.session.clear()
     return ok_response(None)

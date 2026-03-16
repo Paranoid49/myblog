@@ -17,19 +17,13 @@ router = APIRouter(prefix="/api/v1", tags=["api-v1-posts"])
 # 公开文章接口
 
 
-@router.get("/posts", response_model=ApiResponse)
-def list_posts_api(
-    page: int = 1, page_size: int = 20, db: Session = Depends(get_db)
-) -> JSONResponse:
+@router.get("/posts", response_model=ApiResponse, summary="获取已发布文章列表")
+def list_posts_api(page: int = 1, page_size: int = 20, db: Session = Depends(get_db)) -> JSONResponse:
     posts, total = list_published_posts(db, page, page_size)
-    return ok_response(
-        build_paginated_data(
-            [serialize_post(post) for post in posts], total, page, page_size
-        )
-    )
+    return ok_response(build_paginated_data([serialize_post(post) for post in posts], total, page, page_size))
 
 
-@router.get("/posts/{slug}", response_model=ApiResponse)
+@router.get("/posts/{slug}", response_model=ApiResponse, summary="获取文章详情")
 def get_post_detail_api(slug: str, db: Session = Depends(get_db)) -> JSONResponse:
     post = get_post_by_slug(db, slug)
     if not post or not post.published_at:

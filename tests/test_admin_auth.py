@@ -1,11 +1,11 @@
 from pathlib import Path
 from unittest.mock import patch
 
+from conftest import CSRF_HEADERS
+
 from app.core.security import hash_password, verify_password
 from app.models import User
 from app.services.auth_service import authenticate_user, build_admin_user
-
-from conftest import CSRF_HEADERS
 
 
 def test_password_hash_and_verify() -> None:
@@ -58,6 +58,7 @@ def test_create_admin_script_exists() -> None:
 
 
 # ===== Setup API Tests =====
+
 
 def test_setup_status_returns_not_initialized(client) -> None:
     response = client.get("/api/v1/setup/status")

@@ -1,19 +1,21 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
 from app.core.hook_bus import hook_bus
 from app.models import Category, Post, Tag
 from app.schemas.post import ImportMarkdownRequest
+from app.services.markdown_service import extract_markdown_title
 from app.services.taxonomy_service import get_tags_by_ids
-from app.utils.text import slugify
+from app.utils.text import ensure_unique_slug, slugify
 
 
 @dataclass
 class PostCreatePayload:
     """文章创建/更新内部数据传递对象"""
+
     title: str
     summary: str | None
     content: str
@@ -38,17 +40,8 @@ def resolve_category_id(db: Session, category_id: int | None) -> int:
     return default_category.id
 
 
-def ensure_unique_slug(base_slug: str, existing_slugs: set[str]) -> str:
-    if base_slug not in existing_slugs:
-        return base_slug
-
-    index = 2
-    while f"{base_slug}-{index}" in existing_slugs:
-        index += 1
-    return f"{base_slug}-{index}"
-
-
 def build_post(data: PostCreatePayload, existing_slugs: set[str]) -> Post:
+    """根据 PostCreatePayload 构建 Post 实例，自动生成唯一 slug。"""
     slug = ensure_unique_slug(slugify(data.title), existing_slugs)
     return Post(
         title=data.title,
@@ -59,28 +52,8 @@ def build_post(data: PostCreatePayload, existing_slugs: set[str]) -> Post:
     )
 
 
-def extract_markdown_title(markdown: str) -> str:
-    for line in markdown.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("# "):
-            return stripped[2:].strip() or "Untitled"
-
-    for line in markdown.splitlines():
-        stripped = line.strip()
-        if stripped:
-            return stripped[:80]
-
-    return "Untitled"
-
-
-def build_markdown_export(post: Post) -> dict[str, str]:
-    return {
-        "filename": f"{post.slug}.md",
-        "markdown": f"# {post.title}\n\n{post.content}",
-    }
-
-
-def _build_admin_post_list_query(category_id: int | None = None, tag_id: int | None = None):
+def _build_admin_post_list_query(category_id: int | None = None, tag_id: int | None = None) -> Select:
+    """构建后台文章列表查询语句，支持分类和标签筛选。"""
     stmt = select(Post).order_by(Post.created_at.desc())
     if category_id is not None:
         stmt = stmt.where(Post.category_id == category_id)
@@ -98,6 +71,7 @@ def build_post_create_payload(
     category_id: int | None,
     tag_ids: list[int],
 ) -> tuple[PostCreatePayload, list[Tag]]:
+    """构建文章创建/更新的内部数据对象，同时解析分类和标签。"""
     data = PostCreatePayload(
         title=title,
         summary=summary,
@@ -113,6 +87,7 @@ def build_post_from_import_markdown(
     db: Session,
     payload: ImportMarkdownRequest,
 ) -> tuple[PostCreatePayload, list[Tag]]:
+    """从导入的 Markdown 内容构建文章创建数据，标题自动从内容中提取。"""
     return build_post_create_payload(
         db,
         title=extract_markdown_title(payload.markdown),
@@ -124,6 +99,7 @@ def build_post_from_import_markdown(
 
 
 def create_post(db: Session, data: PostCreatePayload, tags: list[Tag]) -> Post:
+    """创建 Post 实例并关联标签，slug 根据已有文章自动去重。"""
     existing_slugs = set(db.execute(select(Post.slug)).scalars().all())
     post = build_post(data, existing_slugs=existing_slugs)
     if tags:
@@ -132,6 +108,7 @@ def create_post(db: Session, data: PostCreatePayload, tags: list[Tag]) -> Post:
 
 
 def update_post(post: Post, data: PostCreatePayload, tags: list[Tag]) -> Post:
+    """用新数据更新文章字段和标签关联。"""
     post.title = data.title
     post.summary = data.summary
     post.content = data.content
@@ -141,38 +118,38 @@ def update_post(post: Post, data: PostCreatePayload, tags: list[Tag]) -> Post:
 
 
 def publish_post(post: Post) -> Post:
-    post.published_at = datetime.now(timezone.utc)
+    """设置文章发布时间为当前 UTC 时间。"""
+    post.published_at = datetime.now(UTC)
     return post
 
 
 def unpublish_post(post: Post) -> Post:
+    """清除文章发布时间，将其恢复为草稿状态。"""
     post.published_at = None
     return post
 
 
-def list_published_posts(
-    db: Session, page: int = 1, page_size: int = 20
-) -> tuple[list[Post], int]:
+def list_published_posts(db: Session, page: int = 1, page_size: int = 20) -> tuple[list[Post], int]:
     """分页查询已发布文章"""
     base = select(Post).where(Post.published_at.is_not(None))
     total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
     posts = list(
-        db.execute(
-            base.order_by(Post.published_at.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        ).scalars().all()
+        db.execute(base.order_by(Post.published_at.desc()).offset((page - 1) * page_size).limit(page_size))
+        .scalars()
+        .all()
     )
     return posts, total
 
 
 def get_post_by_slug(db: Session, slug: str) -> Post | None:
+    """根据 slug 查询文章，不存在返回 None。"""
     stmt = select(Post).where(Post.slug == slug)
     return db.execute(stmt).scalar_one_or_none()
 
 
 class PostNotFoundError(Exception):
     """文章不存在时抛出。"""
+
     pass
 
 
@@ -231,11 +208,7 @@ def list_admin_posts(
     """后台文章列表查询，支持分类和标签筛选，带分页"""
     stmt = _build_admin_post_list_query(category_id, tag_id)
     total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar() or 0
-    posts = list(
-        db.execute(
-            stmt.offset((page - 1) * page_size).limit(page_size)
-        ).scalars().all()
-    )
+    posts = list(db.execute(stmt.offset((page - 1) * page_size).limit(page_size)).scalars().all())
     return posts, total
 
 
