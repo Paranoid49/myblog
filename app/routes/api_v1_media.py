@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import get_current_admin
+from app.core.deps import get_current_admin, require_csrf_header
 from app.core.error_codes import IMAGE_TOO_LARGE, UNSUPPORTED_IMAGE_TYPE
 from app.core.hook_bus import hook_bus
 from app.models import User
@@ -23,6 +23,26 @@ IMAGE_EXTENSION_BY_TYPE = {
     "image/gif": ".gif",
 }
 ALLOWED_IMAGE_TYPES = set(IMAGE_EXTENSION_BY_TYPE)
+
+MAGIC_BYTES_MAP = {
+    b'\xff\xd8\xff': "image/jpeg",
+    b'\x89PNG\r\n\x1a\n': "image/png",
+    b'GIF87a': "image/gif",
+    b'GIF89a': "image/gif",
+}
+
+
+def detect_image_type(content: bytes) -> str | None:
+    """通过文件头 magic bytes 检测真实图片类型"""
+    for magic, mime in MAGIC_BYTES_MAP.items():
+        if content[: len(magic)] == magic:
+            return mime
+    # WebP 格式：RIFF....WEBP
+    if content[:4] == b"RIFF" and content[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
 IMAGE_RULES = {
     "max_bytes": IMAGE_MAX_BYTES,
     "extension_by_type": IMAGE_EXTENSION_BY_TYPE,
@@ -34,6 +54,7 @@ async def upload_image_api(
     file: UploadFile = File(...),
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
+    _csrf: None = Depends(require_csrf_header),
 ) -> JSONResponse:
     content_type = file.content_type or ""
     if content_type not in ALLOWED_IMAGE_TYPES:
@@ -42,6 +63,11 @@ async def upload_image_api(
     content = await file.read()
     if len(content) > IMAGE_MAX_BYTES:
         return error_response("image_too_large", status.HTTP_400_BAD_REQUEST, IMAGE_TOO_LARGE)
+
+    # Magic bytes 校验：验证文件内容与声明的类型一致
+    detected_type = detect_image_type(content)
+    if detected_type is None or detected_type not in ALLOWED_IMAGE_TYPES:
+        return error_response("unsupported_image_type", status.HTTP_400_BAD_REQUEST, UNSUPPORTED_IMAGE_TYPE)
 
     ext = IMAGE_EXTENSION_BY_TYPE.get(content_type, ".img")
     filename = f"{slugify(Path(file.filename or 'image').stem)}-{len(content)}{ext}"

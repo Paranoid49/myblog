@@ -3,8 +3,9 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 
 from app.models import Category, Post, Tag
-from app.schemas.post import ImportMarkdownRequest, PostCreate
+from app.schemas.post import ImportMarkdownRequest
 from app.services.post_service import (
+    PostCreatePayload,
     build_markdown_export,
     build_post,
     build_post_from_import_markdown,
@@ -54,7 +55,7 @@ def test_ensure_unique_slug_handles_chinese_generated_slug() -> None:
 
 
 def test_build_post_applies_unique_slug_when_title_conflicts() -> None:
-    data = PostCreate(
+    data = PostCreatePayload(
         title="My First Post",
         summary="Intro",
         content="Hello",
@@ -117,7 +118,7 @@ def test_create_post_applies_unique_slug_and_tags(db_session) -> None:
     db_session.add_all([category, existing, tag])
     db_session.commit()
 
-    data = PostCreate(
+    data = PostCreatePayload(
         title="My Post",
         summary="摘要",
         content="正文",
@@ -142,7 +143,7 @@ def test_update_post_replaces_fields_and_tags(db_session) -> None:
     db_session.add_all([category_a, category_b, tag_a, tag_b, post])
     db_session.commit()
 
-    data = PostCreate(
+    data = PostCreatePayload(
         title="New Title",
         summary="New Summary",
         content="New Content",
@@ -211,7 +212,7 @@ def test_list_published_posts_returns_latest_published_first(db_session) -> None
     db_session.add_all([category, draft_post, old_post, new_post])
     db_session.commit()
 
-    posts = list_published_posts(db_session)
+    posts, total = list_published_posts(db_session)
 
     assert [post.slug for post in posts] == ["new", "old"]
 

@@ -43,6 +43,7 @@ def serialize_tag(tag: Tag) -> dict:
 def serialize_author(settings: SiteSettings) -> dict:
     """将 SiteSettings 中的作者信息序列化为前端所需的字典。"""
     return {
+        "blog_title": settings.blog_title,
         "name": settings.author_name,
         "bio": settings.author_bio,
         "email": settings.author_email,

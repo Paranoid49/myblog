@@ -5,8 +5,33 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
+# CSRF 头常量，所有写接口测试需要携带
+CSRF_HEADERS = {"X-Requested-With": "XMLHttpRequest"}
+
+
+class CsrfTestClient(TestClient):
+    """自动为写请求（POST/PUT/PATCH/DELETE）注入 CSRF 头的测试客户端"""
+
+    def _inject_csrf(self, kwargs: dict) -> dict:
+        headers = dict(kwargs.get("headers") or {})
+        headers.setdefault("X-Requested-With", "XMLHttpRequest")
+        kwargs["headers"] = headers
+        return kwargs
+
+    def post(self, *args, **kwargs):
+        return super().post(*args, **self._inject_csrf(kwargs))
+
+    def put(self, *args, **kwargs):
+        return super().put(*args, **self._inject_csrf(kwargs))
+
+    def patch(self, *args, **kwargs):
+        return super().patch(*args, **self._inject_csrf(kwargs))
+
+    def delete(self, *args, **kwargs):
+        return super().delete(*args, **self._inject_csrf(kwargs))
+
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
-os.environ["SECRET_KEY"] = "test-secret-key"
+os.environ["SECRET_KEY"] = "test-secret-key!"
 
 import app.models  # noqa: F401
 from app.core.db import Base, get_db
@@ -37,23 +62,26 @@ def setup_database() -> Generator[None, None, None]:
 
 @pytest.fixture()
 def db_session(setup_database: None) -> Generator[Session, None, None]:
-    clear_initialized_cache()  # 清除初始化状态缓存
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+    """每个测试前清空所有表数据（保留表结构），比 drop_all/create_all 更快"""
+    clear_initialized_cache()
     session = TestingSessionLocal()
     try:
+        # 按外键依赖顺序清空数据，避免 drop_all/create_all 的开销
+        for table in reversed(Base.metadata.sorted_tables):
+            session.execute(table.delete())
+        session.commit()
         yield session
     finally:
         session.close()
 
 
 @pytest.fixture()
-def client(db_session: Session) -> Generator[TestClient, None, None]:
+def client(db_session: Session) -> Generator[CsrfTestClient, None, None]:
     def override_get_db() -> Generator[Session, None, None]:
         yield db_session
 
     fastapi_app.dependency_overrides[get_db] = override_get_db
-    with TestClient(fastapi_app) as test_client:
+    with CsrfTestClient(fastapi_app) as test_client:
         yield test_client
     fastapi_app.dependency_overrides.clear()
 
@@ -84,10 +112,11 @@ def admin_user(db_session: Session):
 
 
 @pytest.fixture()
-def logged_in_admin(client: TestClient, initialized_site: SiteSettings, admin_user):
+def logged_in_admin(client: CsrfTestClient, initialized_site: SiteSettings, admin_user):
     response = client.post(
         "/api/v1/auth/login",
         data={"username": "admin", "password": "secret123"},
+        headers=CSRF_HEADERS,
         follow_redirects=False,
     )
     assert response.status_code in (200, 302, 303)

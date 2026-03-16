@@ -25,16 +25,21 @@
 - 为未来假设做通用数据库平台
 
 ### 1.4 扩展方式
-实现 `BaseDatabaseProvider` 并加入 `DATABASE_PROVIDERS`：
+在 `app/core/database_provider.py` 的 `create_app_engine()` 函数中添加新的 driver 分支：
 
 ```python
-class MyProvider(BaseDatabaseProvider):
-    name = "mydb"
+def create_app_engine(database_url: str) -> Engine:
+    url = make_url(database_url)
+    driver = url.drivername
 
-    def supports(self, url: URL) -> bool:
-        return url.drivername.startswith("mydb")
-
-DATABASE_PROVIDERS["mydb"] = MyProvider()
+    if driver.startswith("sqlite"):
+        return create_engine(...)
+    elif driver.startswith("postgresql"):
+        return create_engine(...)
+    elif driver.startswith("mydb"):
+        return create_engine(database_url, future=True, ...)
+    else:
+        raise ValueError(f"unsupported_database_driver:{driver}")
 ```
 
 当 `DATABASE_URL` 不能匹配任何 provider 时，系统抛出：

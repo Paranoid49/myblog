@@ -11,9 +11,9 @@ def test_api_list_posts_returns_published_only(client, initialized_site, admin_u
     payload = response.json()
     assert payload["code"] == 0
     assert payload["message"] == "ok"
-    assert isinstance(payload["data"], list)
-    assert len(payload["data"]) == 1
-    assert payload["data"][0]["title"] == "My First Post"
+    assert isinstance(payload["data"], dict)
+    assert len(payload["data"]["items"]) == 1
+    assert payload["data"]["items"][0]["title"] == "My First Post"
 
 
 def test_api_post_detail_success(client, initialized_site, admin_user, seeded_post, db_session) -> None:
@@ -92,8 +92,8 @@ def test_api_list_admin_posts_success(client, logged_in_admin, seeded_post) -> N
     assert response.status_code == 200
     payload = response.json()
     assert payload["code"] == 0
-    assert isinstance(payload["data"], list)
-    assert len(payload["data"]) >= 1
+    assert isinstance(payload["data"], dict)
+    assert len(payload["data"]["items"]) >= 1
 
 
 def test_api_publish_post_success(client, logged_in_admin, seeded_post, db_session) -> None:
@@ -174,8 +174,8 @@ def test_api_filter_admin_posts_by_category(client, logged_in_admin, seeded_post
     assert response.status_code == 200
     payload = response.json()
     assert payload["code"] == 0
-    assert isinstance(payload["data"], list)
-    assert len(payload["data"]) >= 1
+    assert isinstance(payload["data"], dict)
+    assert len(payload["data"]["items"]) >= 1
 
 
 def test_api_filter_admin_posts_by_tag(client, logged_in_admin, db_session) -> None:
@@ -194,7 +194,7 @@ def test_api_filter_admin_posts_by_tag(client, logged_in_admin, db_session) -> N
     assert response.status_code == 200
     payload = response.json()
     assert payload["code"] == 0
-    assert [post["slug"] for post in payload["data"]] == ["matched"]
+    assert [post["slug"] for post in payload["data"]["items"]] == ["matched"]
 
 
 def test_api_get_category_posts_success(client, initialized_site, admin_user, seeded_post, db_session) -> None:
@@ -207,7 +207,7 @@ def test_api_get_category_posts_success(client, initialized_site, admin_user, se
     payload = response.json()
     assert payload["code"] == 0
     assert payload["data"]["category"]["slug"] == seeded_post.category.slug
-    assert len(payload["data"]["posts"]) == 1
+    assert len(payload["data"]["posts"]["items"]) == 1
 
 
 def test_api_get_tag_posts_success(client, initialized_site, admin_user, seeded_post, db_session) -> None:
@@ -220,7 +220,7 @@ def test_api_get_tag_posts_success(client, initialized_site, admin_user, seeded_
     payload = response.json()
     assert payload["code"] == 0
     assert payload["data"]["tag"]["slug"] == seeded_post.tags[0].slug
-    assert len(payload["data"]["posts"]) == 1
+    assert len(payload["data"]["posts"]["items"]) == 1
 
 
 def test_api_update_admin_post_success(client, logged_in_admin, seeded_post) -> None:

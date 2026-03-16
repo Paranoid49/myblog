@@ -12,6 +12,7 @@ from app.core.error_codes import (
 )
 from app.main import app
 from app.models.site_settings import SiteSettings
+from app.routes.api_v1_admin_posts import router as admin_posts_router
 from app.routes.api_v1_auth import router as auth_router
 from app.routes.api_v1_media import IMAGE_EXTENSION_BY_TYPE, IMAGE_MAX_BYTES, IMAGE_RULES
 from app.routes.api_v1_posts import router as posts_router
@@ -149,12 +150,13 @@ def test_main_app_keeps_auth_router_registered() -> None:
 
 def test_posts_router_keeps_admin_and_public_boundaries_registered() -> None:
     post_paths = {route.path for route in posts_router.routes}
+    admin_post_paths = {route.path for route in admin_posts_router.routes}
     assert '/api/v1/posts' in post_paths
     assert '/api/v1/posts/{slug}' in post_paths
-    assert '/api/v1/admin/posts' in post_paths
-    assert '/api/v1/admin/posts/import-markdown' in post_paths
-    assert '/api/v1/admin/posts/{post_id}/publish' in post_paths
-    assert '/api/v1/admin/posts/{post_id}/unpublish' in post_paths
+    assert '/api/v1/admin/posts' in admin_post_paths
+    assert '/api/v1/admin/posts/import-markdown' in admin_post_paths
+    assert '/api/v1/admin/posts/{post_id}/publish' in admin_post_paths
+    assert '/api/v1/admin/posts/{post_id}/unpublish' in admin_post_paths
 
 
 def test_taxonomy_router_keeps_public_query_and_admin_create_boundaries() -> None:

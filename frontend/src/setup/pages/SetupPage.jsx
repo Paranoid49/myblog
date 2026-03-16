@@ -56,20 +56,20 @@ export default function SetupPage() {
 
   if (loading) {
     return (
-      <div className="site-frame" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="site-frame center-frame">
         <div className="notice muted">检查初始化状态...</div>
       </div>
     );
   }
 
   return (
-    <div className="site-frame" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="panel-card" style={{ width: '100%', maxWidth: 440, margin: 'var(--space-xl)' }}>
+    <div className="site-frame center-frame">
+      <div className="panel-card setup-card">
         <p className="admin-kicker">Setup</p>
-        <h2 style={{ fontFamily: 'var(--font-mono)', marginBottom: 'var(--space-sm)' }}>
+        <h2 className="mono-heading mb-sm">
           {'>'} 博客初始化
         </h2>
-        <p className="muted" style={{ marginBottom: 'var(--space-lg)' }}>
+        <p className="muted mb-lg">
           首次运行，请设置站点信息和管理员账号。
         </p>
 
@@ -77,7 +77,7 @@ export default function SetupPage() {
 
         <form onSubmit={onSubmit} className="stack-form">
           <div>
-            <label style={{ display: 'block', marginBottom: 'var(--space-xs)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            <label className="form-label">
               博客标题
             </label>
             <input
@@ -85,11 +85,11 @@ export default function SetupPage() {
               onChange={(e) => setBlogTitle(e.target.value)}
               type="text"
               required
-              style={{ width: '100%' }}
+              className="full-width"
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: 'var(--space-xs)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            <label className="form-label">
               管理员用户名
             </label>
             <input
@@ -97,11 +97,11 @@ export default function SetupPage() {
               onChange={(e) => setUsername(e.target.value)}
               type="text"
               required
-              style={{ width: '100%' }}
+              className="full-width"
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: 'var(--space-xs)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            <label className="form-label">
               密码
             </label>
             <input
@@ -109,11 +109,11 @@ export default function SetupPage() {
               onChange={(e) => setPassword(e.target.value)}
               type="password"
               required
-              style={{ width: '100%' }}
+              className="full-width"
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: 'var(--space-xs)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            <label className="form-label">
               确认密码
             </label>
             <input
@@ -121,10 +121,10 @@ export default function SetupPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               type="password"
               required
-              style={{ width: '100%' }}
+              className="full-width"
             />
           </div>
-          <button type="submit" className="primary-button" disabled={submitting} style={{ marginTop: 'var(--space-md)' }}>
+          <button type="submit" className="primary-button mt-md" disabled={submitting}>
             {submitting ? '初始化中...' : '初始化'}
           </button>
         </form>

@@ -4,6 +4,7 @@ import { apiRequest } from '../../shared/api/client';
 import { formatDate } from '../../shared/utils/format';
 import PublicLayout from '../../shared/layout/PublicLayout';
 import MarkdownRenderer from '../../shared/markdown/MarkdownRenderer';
+import { PostDetailSkeleton } from '../../shared/components/Skeleton';
 
 export default function PublicPostDetailPage() {
   const { slug } = useParams();
@@ -19,12 +20,12 @@ export default function PublicPostDetailPage() {
 
   return (
     <PublicLayout title={post?.title || '文章详情'} description={post?.summary || ''}>
-      <p style={{ marginBottom: 'var(--space-lg)' }}>
+      <p className="mb-lg">
         <Link to="/" className="nav-link">← 返回首页</Link>
       </p>
 
       {error ? <div className="notice error">{error}</div> : null}
-      {!post ? <div className="notice muted">加载中...</div> : null}
+      {!post ? <PostDetailSkeleton /> : null}
 
       {post ? (
         <article className="post-detail-card">
@@ -46,7 +47,7 @@ export default function PublicPostDetailPage() {
             </span>
           </div>
           {(post.tags || []).length ? (
-            <div className="post-tag-list" style={{ marginBottom: 'var(--space-lg)' }}>
+            <div className="post-tag-list mb-lg">
               {post.tags.map((tag) => (
                 <Link key={tag.id} to={`/tags/${tag.slug}`} className="tag-chip">#{tag.name}</Link>
               ))}

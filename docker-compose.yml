@@ -1,0 +1,13 @@
+services:
+  myblog:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/app/static/uploads
+    env_file: .env
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=sqlite:////app/data/myblog.db
+    restart: unless-stopped

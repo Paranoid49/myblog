@@ -3,7 +3,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.error_codes import INVALID_CREDENTIALS, SITE_NOT_INITIALIZED
+from app.core.deps import require_csrf_header
+from app.core.error_codes import INVALID_CREDENTIALS, SITE_NOT_INITIALIZED, TOO_MANY_ATTEMPTS
+from app.core.rate_limiter import login_limiter
 from app.schemas.api_response import ApiResponse, error_response, ok_response
 from app.services.auth_service import authenticate_user
 from app.services.setup_service import is_initialized
@@ -15,19 +17,28 @@ def api_login(
     username: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db),
+    _csrf: None = Depends(require_csrf_header),
 ) -> JSONResponse:
     if not is_initialized(db):
         return error_response("site_not_initialized", status.HTTP_409_CONFLICT, SITE_NOT_INITIALIZED)
 
+    # 速率限制检查
+    client_ip = request.client.host if request.client else "unknown"
+    if login_limiter.is_blocked(client_ip):
+        return error_response("too_many_attempts", status.HTTP_429_TOO_MANY_REQUESTS, TOO_MANY_ATTEMPTS)
+
     user = authenticate_user(db, username, password)
     if not user:
+        login_limiter.record(client_ip)
         return error_response("invalid_credentials", status.HTTP_401_UNAUTHORIZED, INVALID_CREDENTIALS)
 
+    # 登录成功，重置速率限制
+    login_limiter.reset(client_ip)
     request.session["user_id"] = user.id
     return ok_response({"user_id": user.id, "username": user.username})
 
 
 @router.post("/logout", response_model=ApiResponse)
-def api_logout(request: Request) -> JSONResponse:
+def api_logout(request: Request, _csrf: None = Depends(require_csrf_header)) -> JSONResponse:
     request.session.clear()
     return ok_response(None)

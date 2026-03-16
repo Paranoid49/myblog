@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { apiRequest } from '../../shared/api/client';
 import { formatDate } from '../../shared/utils/format';
 import PublicLayout from '../../shared/layout/PublicLayout';
+import { PostListSkeleton } from '../../shared/components/Skeleton';
 
 export default function PublicHomePage() {
   const [posts, setPosts] = useState([]);
@@ -20,7 +21,7 @@ export default function PublicHomePage() {
     <PublicLayout title="首页" description="记录技术实践、代码思考与系统构建。">
       {error ? <div className="notice error">{error}</div> : null}
       {!loaded ? (
-        <div className="notice muted">加载中...</div>
+        <PostListSkeleton />
       ) : null}
       {loaded && !posts.length ? (
         <div className="notice muted">暂无已发布文章，请先登录后台发布内容。</div>

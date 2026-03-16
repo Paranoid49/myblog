@@ -17,9 +17,14 @@ function handleUnauthorized(error) {
 }
 
 export async function apiRequest(path, options = {}) {
+  const { headers: customHeaders, ...restOptions } = options;
   const response = await fetch(`/api/v1${path}`, {
     credentials: 'same-origin',
-    ...options,
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      ...customHeaders,
+    },
+    ...restOptions,
   });
 
   let payload;

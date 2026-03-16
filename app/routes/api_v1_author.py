@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import get_current_admin
+from app.core.deps import get_current_admin, require_csrf_header
 from app.core.error_codes import SITE_NOT_INITIALIZED
 from app.models import User
 from app.schemas.api_response import ApiResponse, error_response, ok_response
@@ -29,6 +29,7 @@ def update_author_profile(
     payload: AuthorProfileUpdateRequest,
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
+    _csrf: None = Depends(require_csrf_header),
 ) -> JSONResponse:
     settings = get_site_settings(db)
     if settings is None:

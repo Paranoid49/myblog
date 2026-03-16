@@ -22,7 +22,7 @@ class Post(Base):
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"))
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    published_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    published_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
 
     category = relationship("Category", back_populates="posts")
     tags = relationship("Tag", secondary=post_tags, back_populates="posts")

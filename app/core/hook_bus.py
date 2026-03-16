@@ -19,8 +19,17 @@ class HookBus:
     def __init__(self) -> None:
         self._handlers: dict[str, list[HookHandler]] = {}
 
-    def subscribe(self, event_name: str, handler: HookHandler) -> None:
+    def subscribe(self, event_name: str, handler: HookHandler) -> callable:
+        """订阅事件，返回取消订阅函数"""
         self._handlers.setdefault(event_name, []).append(handler)
+
+        def unsubscribe() -> None:
+            try:
+                self._handlers[event_name].remove(handler)
+            except (KeyError, ValueError):
+                pass
+
+        return unsubscribe
 
     def emit(self, event_name: str, payload: dict[str, Any]) -> None:
         event = HookEvent(name=event_name, payload=payload)

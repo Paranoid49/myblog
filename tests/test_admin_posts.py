@@ -1,10 +1,9 @@
 from app.models import Category, Post
-from app.schemas.post import PostCreate
-from app.services.post_service import build_post
+from app.services.post_service import PostCreatePayload, build_post
 
 
 def test_build_post_generates_slug() -> None:
-    data = PostCreate(
+    data = PostCreatePayload(
         title="My First Post",
         summary="Intro",
         content="Hello",

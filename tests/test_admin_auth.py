@@ -5,6 +5,8 @@ from app.core.security import hash_password, verify_password
 from app.models import User
 from app.services.auth_service import authenticate_user, build_admin_user
 
+from conftest import CSRF_HEADERS
+
 
 def test_password_hash_and_verify() -> None:
     password = "secret123"
@@ -85,6 +87,7 @@ def test_setup_api_initializes_site(client, db_session) -> None:
                 "password": "secret123",
                 "confirm_password": "secret123",
             },
+            headers=CSRF_HEADERS,
         )
 
     assert response.status_code == 200
@@ -102,6 +105,7 @@ def test_setup_api_rejects_password_mismatch(client) -> None:
             "password": "secret123",
             "confirm_password": "wrong",
         },
+        headers=CSRF_HEADERS,
     )
 
     assert response.status_code == 400
@@ -118,6 +122,7 @@ def test_setup_api_rejects_already_initialized(client, initialized_site, admin_u
                 "password": "secret123",
                 "confirm_password": "secret123",
             },
+            headers=CSRF_HEADERS,
         )
 
     assert response.status_code == 409

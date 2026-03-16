@@ -1,13 +1,41 @@
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.hook_bus import hook_bus
-from app.models import Post, Tag
-from app.schemas.post import ImportMarkdownRequest, PostCreate
-from app.services.admin_post_service import get_tags_by_ids, resolve_category_id
+from app.models import Category, Post, Tag
+from app.schemas.post import ImportMarkdownRequest
+from app.services.taxonomy_service import get_tags_by_ids
 from app.utils.text import slugify
+
+
+@dataclass
+class PostCreatePayload:
+    """文章创建/更新内部数据传递对象"""
+    title: str
+    summary: str | None
+    content: str
+    category_id: int
+    tag_ids: list[int] = field(default_factory=list)
+
+
+def resolve_category_id(db: Session, category_id: int | None) -> int:
+    """解析分类 ID，未指定时自动获取或创建默认分类"""
+    if category_id is not None:
+        return category_id
+
+    default_category = db.execute(select(Category).where(Category.slug == "default")).scalar_one_or_none()
+    if default_category is None:
+        default_category = db.execute(select(Category).where(Category.name == "默认分类")).scalar_one_or_none()
+
+    if default_category is None:
+        default_category = Category(name="默认分类", slug="default")
+        db.add(default_category)
+        db.flush()
+
+    return default_category.id
 
 
 def ensure_unique_slug(base_slug: str, existing_slugs: set[str]) -> str:
@@ -20,7 +48,7 @@ def ensure_unique_slug(base_slug: str, existing_slugs: set[str]) -> str:
     return f"{base_slug}-{index}"
 
 
-def build_post(data: PostCreate, existing_slugs: set[str]) -> Post:
+def build_post(data: PostCreatePayload, existing_slugs: set[str]) -> Post:
     slug = ensure_unique_slug(slugify(data.title), existing_slugs)
     return Post(
         title=data.title,
@@ -69,8 +97,8 @@ def build_post_create_payload(
     content: str,
     category_id: int | None,
     tag_ids: list[int],
-) -> tuple[PostCreate, list[Tag]]:
-    data = PostCreate(
+) -> tuple[PostCreatePayload, list[Tag]]:
+    data = PostCreatePayload(
         title=title,
         summary=summary,
         content=content,
@@ -84,7 +112,7 @@ def build_post_create_payload(
 def build_post_from_import_markdown(
     db: Session,
     payload: ImportMarkdownRequest,
-) -> tuple[PostCreate, list[Tag]]:
+) -> tuple[PostCreatePayload, list[Tag]]:
     return build_post_create_payload(
         db,
         title=extract_markdown_title(payload.markdown),
@@ -95,7 +123,7 @@ def build_post_from_import_markdown(
     )
 
 
-def create_post(db: Session, data: PostCreate, tags: list[Tag]) -> Post:
+def create_post(db: Session, data: PostCreatePayload, tags: list[Tag]) -> Post:
     existing_slugs = set(db.execute(select(Post.slug)).scalars().all())
     post = build_post(data, existing_slugs=existing_slugs)
     if tags:
@@ -103,7 +131,7 @@ def create_post(db: Session, data: PostCreate, tags: list[Tag]) -> Post:
     return post
 
 
-def update_post(post: Post, data: PostCreate, tags: list[Tag]) -> Post:
+def update_post(post: Post, data: PostCreatePayload, tags: list[Tag]) -> Post:
     post.title = data.title
     post.summary = data.summary
     post.content = data.content
@@ -122,9 +150,20 @@ def unpublish_post(post: Post) -> Post:
     return post
 
 
-def list_published_posts(db: Session) -> list[Post]:
-    stmt = select(Post).where(Post.published_at.is_not(None)).order_by(Post.published_at.desc())
-    return list(db.execute(stmt).scalars().all())
+def list_published_posts(
+    db: Session, page: int = 1, page_size: int = 20
+) -> tuple[list[Post], int]:
+    """分页查询已发布文章"""
+    base = select(Post).where(Post.published_at.is_not(None))
+    total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
+    posts = list(
+        db.execute(
+            base.order_by(Post.published_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        ).scalars().all()
+    )
+    return posts, total
 
 
 def get_post_by_slug(db: Session, slug: str) -> Post | None:
@@ -145,7 +184,7 @@ def get_post_or_raise(db: Session, post_id: int) -> Post:
     return post
 
 
-def save_new_post(db: Session, data: PostCreate, tags: list[Tag]) -> Post:
+def save_new_post(db: Session, data: PostCreatePayload, tags: list[Tag]) -> Post:
     """创建新文章并持久化，触发 post.created 事件。"""
     post = create_post(db, data, tags)
     db.add(post)
@@ -155,7 +194,7 @@ def save_new_post(db: Session, data: PostCreate, tags: list[Tag]) -> Post:
     return post
 
 
-def save_post_update(db: Session, post: Post, data: PostCreate, tags: list[Tag]) -> Post:
+def save_post_update(db: Session, post: Post, data: PostCreatePayload, tags: list[Tag]) -> Post:
     """更新文章并持久化，触发 post.updated 事件。"""
     update_post(post, data, tags)
     db.commit()
@@ -182,6 +221,27 @@ def save_unpublish(db: Session, post: Post) -> Post:
     return post
 
 
-def list_admin_posts(db: Session, category_id: int | None = None, tag_id: int | None = None) -> list[Post]:
-    """后台文章列表查询，支持按分类和标签筛选。"""
-    return list(db.execute(_build_admin_post_list_query(category_id, tag_id)).scalars().all())
+def list_admin_posts(
+    db: Session,
+    category_id: int | None = None,
+    tag_id: int | None = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> tuple[list[Post], int]:
+    """后台文章列表查询，支持分类和标签筛选，带分页"""
+    stmt = _build_admin_post_list_query(category_id, tag_id)
+    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar() or 0
+    posts = list(
+        db.execute(
+            stmt.offset((page - 1) * page_size).limit(page_size)
+        ).scalars().all()
+    )
+    return posts, total
+
+
+def delete_post(db: Session, post: Post) -> None:
+    """删除文章并触发 post.deleted 事件"""
+    post_id, slug = post.id, post.slug
+    db.delete(post)
+    db.commit()
+    hook_bus.emit("post.deleted", {"post_id": post_id, "slug": slug})

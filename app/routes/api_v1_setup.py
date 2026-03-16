@@ -1,12 +1,13 @@
 import logging
 from contextlib import contextmanager
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.engine import make_url
 
 from app.core.config import settings
 from app.core.db import SessionLocal
+from app.core.deps import require_csrf_header
 from app.core.error_codes import (
     SETUP_ALREADY_INITIALIZED,
     SETUP_DATABASE_BOOTSTRAP_FAILED,
@@ -59,7 +60,7 @@ def get_setup_status() -> JSONResponse:
 
 
 @router.post("")
-def perform_setup(request: Request, data: SetupRequest) -> JSONResponse:
+def perform_setup(request: Request, data: SetupRequest, _csrf: None = Depends(require_csrf_header)) -> JSONResponse:
     if data.password != data.confirm_password:
         return error_response("password_mismatch", status.HTTP_400_BAD_REQUEST, SETUP_PASSWORD_MISMATCH)
 

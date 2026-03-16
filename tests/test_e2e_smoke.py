@@ -40,7 +40,10 @@ def _post_json(url: str, payload: dict) -> dict:
     request = Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+        },
         method="POST",
     )
     with urlopen(request, timeout=10) as response:
@@ -56,7 +59,7 @@ def test_admin_posts_redirects_to_login_and_returns_after_login(tmp_path) -> Non
     env = {
         **os.environ,
         "DATABASE_URL": f"sqlite:///{database_path}",
-        "SECRET_KEY": "test-secret-key",
+        "SECRET_KEY": "test-secret-key!",
     }
 
     backend_process = subprocess.Popen(
@@ -122,7 +125,7 @@ def test_logout_redirects_back_to_admin_login(tmp_path) -> None:
     env = {
         **os.environ,
         "DATABASE_URL": f"sqlite:///{database_path}",
-        "SECRET_KEY": "test-secret-key",
+        "SECRET_KEY": "test-secret-key!",
     }
 
     backend_process = subprocess.Popen(
@@ -219,4 +222,4 @@ def test_minimal_flow_setup_login_create_publish_and_home_visible(client, db_ses
     list_resp = client.get("/api/v1/posts")
     assert list_resp.status_code == 200
     payload = list_resp.json()
-    assert any(item["title"] == "E2E 文章" for item in payload["data"])
+    assert any(item["title"] == "E2E 文章" for item in payload["data"]["items"])

@@ -1,14 +1,6 @@
 from pydantic import BaseModel, Field, field_validator
 
 
-class PostCreate(BaseModel):
-    title: str
-    summary: str | None = None
-    content: str
-    category_id: int
-    tag_ids: list[int] = Field(default_factory=list)
-
-
 class AdminPostWriteRequest(BaseModel):
     """后台文章创建/更新统一请求体"""
 
