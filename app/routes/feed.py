@@ -1,5 +1,6 @@
 """RSS Feed 生成模块。"""
 
+import threading
 import time
 from xml.sax.saxutils import escape
 
@@ -15,15 +16,18 @@ router = APIRouter(tags=["feed"])
 
 # RSS 内存缓存：缓存生成的 XML 及过期时间（5 分钟）
 _feed_cache: dict = {"xml": None, "expires": 0}
+_feed_lock = threading.Lock()
 
 
 @router.get("/feed.xml", include_in_schema=False)
 def rss_feed(db: Session = Depends(get_db)) -> Response:
-    """生成 RSS 2.0 Feed（5 分钟缓存）"""
+    """生成 RSS 2.0 Feed（5 分钟缓存，线程安全）"""
     now = time.time()
-    if _feed_cache["xml"] and now < _feed_cache["expires"]:
-        return Response(content=_feed_cache["xml"], media_type="application/rss+xml")
+    with _feed_lock:
+        if _feed_cache["xml"] and now < _feed_cache["expires"]:
+            return Response(content=_feed_cache["xml"], media_type="application/rss+xml")
 
+    # 生成 XML（在锁外执行，避免阻塞其他请求）
     posts, _ = list_published_posts(db)
     site = get_site_settings(db)
     blog_title = site.blog_title if site else "myblog"
@@ -33,6 +37,7 @@ def rss_feed(db: Session = Depends(get_db)) -> Response:
             <link>/posts/{escape(p.slug)}</link>
             <description>{escape(p.summary or "")}</description>
             <pubDate>{p.published_at.strftime("%a, %d %b %Y %H:%M:%S +0000")}</pubDate>
+            <guid isPermaLink="true">/posts/{escape(p.slug)}</guid>
         </item>"""
         for p in posts
     )
@@ -46,7 +51,8 @@ def rss_feed(db: Session = Depends(get_db)) -> Response:
     </channel>
 </rss>"""
 
-    # 写入缓存，5 分钟有效期
-    _feed_cache["xml"] = xml
-    _feed_cache["expires"] = now + 300
+    with _feed_lock:
+        _feed_cache["xml"] = xml
+        _feed_cache["expires"] = time.time() + 300
+
     return Response(content=xml, media_type="application/rss+xml")

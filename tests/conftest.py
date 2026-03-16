@@ -50,11 +50,6 @@ engine = create_app_engine(TEST_DATABASE_URL)
 TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
-def test_base_metadata_contains_blog_tables() -> None:
-    table_names = set(Base.metadata.tables.keys())
-    assert {"users", "categories", "tags", "posts", "post_tags", "site_settings"}.issubset(table_names)
-
-
 @pytest.fixture(scope="session", autouse=True)
 def setup_database() -> Generator[None, None, None]:
     Base.metadata.drop_all(bind=engine)

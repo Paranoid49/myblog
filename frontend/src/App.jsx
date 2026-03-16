@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import AuthGuard from './shared/auth/AuthGuard';
+import { PostListSkeleton } from './shared/components/Skeleton';
 
 // 懒加载页面组件
 const SetupPage = lazy(() => import('./setup/pages/SetupPage'));
@@ -14,10 +15,15 @@ const PublicPostDetailPage = lazy(() => import('./public/pages/PublicPostDetailP
 const PublicCategoryPage = lazy(() => import('./public/pages/PublicCategoryPage'));
 const PublicTagPage = lazy(() => import('./public/pages/PublicTagPage'));
 const PublicAuthorPage = lazy(() => import('./public/pages/PublicAuthorPage'));
+const PublicTaxonomyListPage = lazy(() => import('./public/pages/PublicTaxonomyListPage'));
 const NotFoundPage = lazy(() => import('./public/pages/NotFoundPage'));
 
 function PageFallback() {
-    return <div className="notice muted">加载中...</div>;
+    return (
+        <div className="app-shell public-shell">
+            <PostListSkeleton count={2} />
+        </div>
+    );
 }
 
 function Lazy({ Component, ...props }) {
@@ -36,6 +42,7 @@ export default function App() {
                 <Route path="/" element={<Lazy Component={PublicHomePage} />} />
                 <Route path="/posts/:slug" element={<Lazy Component={PublicPostDetailPage} />} />
                 <Route path="/categories/:slug" element={<Lazy Component={PublicCategoryPage} />} />
+                <Route path="/categories" element={<Lazy Component={PublicTaxonomyListPage} />} />
                 <Route path="/tags/:slug" element={<Lazy Component={PublicTagPage} />} />
                 <Route path="/author" element={<Lazy Component={PublicAuthorPage} />} />
                 <Route path="/admin/login" element={<Lazy Component={LoginPage} />} />

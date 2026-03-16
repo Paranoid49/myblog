@@ -56,4 +56,4 @@ jobs:
         with:
           node-version: '20'
       - name: NPM 依赖审计
-        run: cd frontend && npm audit --audit-level=moderate || true
+        run: cd frontend && npm audit --audit-level=high

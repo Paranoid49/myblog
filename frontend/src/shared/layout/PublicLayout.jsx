@@ -25,6 +25,9 @@ export default function PublicLayout({ title, description, children }) {
             <Link to="/author" className={`nav-link ${isActive('/author') ? 'active' : ''}`}>
               作者
             </Link>
+            <Link to="/categories" className={`nav-link ${isActive('/categories') ? 'active' : ''}`}>
+              分类
+            </Link>
             <Link to={getAdminEntryPath()} className="nav-link">
               后台
             </Link>

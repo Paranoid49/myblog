@@ -12,6 +12,7 @@ export default function PublicHomePage() {
   const [loaded, setLoaded] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalPosts, setTotalPosts] = useState(0);
 
   useEffect(() => {
     setLoaded(false);
@@ -19,6 +20,7 @@ export default function PublicHomePage() {
       .then((data) => {
         setPosts(data?.items || []);
         setTotalPages(data?.total_pages || 1);
+        setTotalPosts(data?.total || 0);
       })
       .catch((e) => setError(e.message || 'load_failed'))
       .finally(() => setLoaded(true));
@@ -35,6 +37,9 @@ export default function PublicHomePage() {
       ) : null}
 
       <section className="post-list-grid">
+        {loaded && posts.length > 0 && (
+          <p className="muted">共 {totalPosts} 篇文章</p>
+        )}
         {posts.map((post) => (
           <article key={post.id} className="post-card">
             <div className="post-meta-row">

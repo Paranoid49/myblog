@@ -11,7 +11,6 @@ export default defineConfig({
         exclude: [
             'node_modules/**',
             'src/**/*.test.mjs',
-            'src/admin/hooks/useAdminPostsState.helpers.test.js',
         ],
         // 覆盖率配置，使用 v8 引擎
         coverage: {

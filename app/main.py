@@ -70,6 +70,7 @@ app = FastAPI(title="myblog", lifespan=lifespan)
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
+    max_age=86400,
     # 生产环境仅通过 HTTPS 传输 session cookie
     https_only=settings.environment == "production",
     same_site="lax",

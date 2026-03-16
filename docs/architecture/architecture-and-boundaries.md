@@ -71,7 +71,7 @@ myblog 当前采用：
 - `app/routes/api_v1_posts.py` — 前台公开接口
 - `app/routes/api_v1_admin_posts.py` — 后台管理接口
 - `app/services/post_service.py`
-- `app/services/admin_post_service.py`
+- `app/services/markdown_service.py`
 - `frontend/src/admin/pages/AdminPostsPage.jsx`
 
 当前能力：

@@ -98,10 +98,26 @@ def build_post_from_import_markdown(
     )
 
 
+def _slug_exists(db: Session, slug: str) -> bool:
+    """检查 slug 是否已存在"""
+    return db.execute(select(Post.id).where(Post.slug == slug).limit(1)).first() is not None
+
+
 def create_post(db: Session, data: PostCreatePayload, tags: list[Tag]) -> Post:
-    """创建 Post 实例并关联标签，slug 根据已有文章自动去重。"""
-    existing_slugs = set(db.execute(select(Post.slug)).scalars().all())
-    post = build_post(data, existing_slugs=existing_slugs)
+    """创建 Post 实例并关联标签，slug 通过逐条查询数据库去重。"""
+    base_slug = slugify(data.title)
+    slug = base_slug
+    index = 2
+    while _slug_exists(db, slug):
+        slug = f"{base_slug}-{index}"
+        index += 1
+    post = Post(
+        title=data.title,
+        slug=slug,
+        summary=data.summary,
+        content=data.content,
+        category_id=data.category_id,
+    )
     if tags:
         post.tags = tags
     return post

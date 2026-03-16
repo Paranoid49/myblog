@@ -5,21 +5,17 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import get_current_admin, require_csrf_header
-from app.core.error_codes import POST_NOT_FOUND
-from app.core.exceptions import NotFoundError
-from app.models import User
+from app.core.deps import get_current_admin, get_post_or_404, require_csrf_header
+from app.models import Post, User
 from app.schemas.api_response import ApiResponse, ok_response
 from app.schemas.pagination import build_paginated_data
 from app.schemas.post import AdminPostWriteRequest, ImportMarkdownRequest
 from app.schemas.serializers import serialize_post
 from app.services.markdown_service import build_markdown_export
 from app.services.post_service import (
-    PostNotFoundError,
     build_post_create_payload,
     build_post_from_import_markdown,
     delete_post,
-    get_post_or_raise,
     list_admin_posts,
     save_new_post,
     save_post_update,
@@ -81,17 +77,12 @@ def import_markdown_post_api(
 
 @router.post("/admin/posts/{post_id}", response_model=ApiResponse, summary="更新文章")
 def update_admin_post_api(
-    post_id: int,
     payload: AdminPostWriteRequest,
+    post: Post = Depends(get_post_or_404),
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
     _csrf: None = Depends(require_csrf_header),
 ) -> JSONResponse:
-    try:
-        post = get_post_or_raise(db, post_id)
-    except PostNotFoundError:
-        raise NotFoundError("post_not_found", POST_NOT_FOUND) from None
-
     data, tags = build_post_create_payload(
         db,
         title=payload.title,
@@ -106,15 +97,10 @@ def update_admin_post_api(
 
 @router.get("/admin/posts/{post_id}/export-markdown", response_model=ApiResponse, summary="导出文章为 Markdown")
 def export_markdown_post_api(
-    post_id: int,
+    post: Post = Depends(get_post_or_404),
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    try:
-        post = get_post_or_raise(db, post_id)
-    except PostNotFoundError:
-        raise NotFoundError("post_not_found", POST_NOT_FOUND) from None
-
     return ok_response(build_markdown_export(post))
 
 
@@ -123,46 +109,32 @@ def export_markdown_post_api(
 
 @router.post("/admin/posts/{post_id}/publish", response_model=ApiResponse, summary="发布文章")
 def publish_post_api(
-    post_id: int,
+    post: Post = Depends(get_post_or_404),
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
     _csrf: None = Depends(require_csrf_header),
 ) -> JSONResponse:
-    try:
-        post = get_post_or_raise(db, post_id)
-    except PostNotFoundError:
-        raise NotFoundError("post_not_found", POST_NOT_FOUND) from None
-
     post = save_publish(db, post)
     return ok_response(serialize_post(post))
 
 
 @router.post("/admin/posts/{post_id}/unpublish", response_model=ApiResponse, summary="取消发布文章")
 def unpublish_post_api(
-    post_id: int,
+    post: Post = Depends(get_post_or_404),
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
     _csrf: None = Depends(require_csrf_header),
 ) -> JSONResponse:
-    try:
-        post = get_post_or_raise(db, post_id)
-    except PostNotFoundError:
-        raise NotFoundError("post_not_found", POST_NOT_FOUND) from None
-
     post = save_unpublish(db, post)
     return ok_response(serialize_post(post))
 
 
 @router.post("/admin/posts/{post_id}/delete", response_model=ApiResponse, summary="删除文章")
 def delete_post_api(
-    post_id: int,
+    post: Post = Depends(get_post_or_404),
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
     _csrf: None = Depends(require_csrf_header),
 ) -> JSONResponse:
-    try:
-        post = get_post_or_raise(db, post_id)
-    except PostNotFoundError:
-        raise NotFoundError("post_not_found", POST_NOT_FOUND) from None
     delete_post(db, post)
     return ok_response(None)

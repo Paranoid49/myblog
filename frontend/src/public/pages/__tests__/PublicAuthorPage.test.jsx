@@ -2,26 +2,46 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-// 只 mock apiRequest，不 mock Layout
+// 只 mock apiRequest，不再 mock ThemeProvider 和 SiteProvider
 vi.mock('../../../shared/api/client', () => ({
     apiRequest: vi.fn(),
 }));
 
-// mock SiteProvider 的 useSite（因为 PublicLayout 依赖它）
-vi.mock('../../../shared/site/SiteProvider', () => ({
-    useSite: () => ({ blogTitle: '测试博客' }),
-}));
-
-// mock ThemeProvider（PublicLayout 依赖）
-vi.mock('../../../shared/theme/ThemeProvider', () => ({
-    useTheme: () => ({ theme: 'light', toggleTheme: vi.fn() }),
-}));
-
 import { apiRequest } from '../../../shared/api/client';
+import { ThemeProvider } from '../../../shared/theme/ThemeProvider';
+import { SiteProvider } from '../../../shared/site/SiteProvider';
 import PublicAuthorPage from '../PublicAuthorPage';
 
-describe('PublicAuthorPage（真实渲染）', () => {
-    beforeEach(() => { vi.clearAllMocks(); });
+// 模拟 localStorage（ThemeProvider 读写 data-theme 需要）
+const localStorageMock = (() => {
+    let store = {};
+    return {
+        getItem: vi.fn((key) => store[key] || null),
+        setItem: vi.fn((key, value) => { store[key] = value; }),
+        removeItem: vi.fn((key) => { delete store[key]; }),
+        clear: vi.fn(() => { store = {}; }),
+    };
+})();
+Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
+// 用真实 Provider 包裹被测组件
+function renderWithProviders(ui) {
+    return render(
+        <MemoryRouter>
+            <ThemeProvider>
+                <SiteProvider>
+                    {ui}
+                </SiteProvider>
+            </ThemeProvider>
+        </MemoryRouter>
+    );
+}
+
+describe('PublicAuthorPage（真实 Provider 渲染）', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        localStorageMock.clear();
+    });
 
     it('加载作者数据后显示作者名', async () => {
         apiRequest.mockResolvedValue({
@@ -33,11 +53,7 @@ describe('PublicAuthorPage（真实渲染）', () => {
             link: '',
         });
 
-        render(
-            <MemoryRouter>
-                <PublicAuthorPage />
-            </MemoryRouter>
-        );
+        renderWithProviders(<PublicAuthorPage />);
 
         await waitFor(() => {
             expect(screen.getByText('张三')).toBeTruthy();
@@ -54,14 +70,27 @@ describe('PublicAuthorPage（真实渲染）', () => {
             link: '',
         });
 
-        render(
-            <MemoryRouter>
-                <PublicAuthorPage />
-            </MemoryRouter>
-        );
+        renderWithProviders(<PublicAuthorPage />);
 
         await waitFor(() => {
             expect(screen.getByText('全栈开发者')).toBeTruthy();
+        });
+    });
+
+    it('博客标题从 SiteProvider 获取', async () => {
+        apiRequest.mockResolvedValue({
+            blog_title: '我的技术博客',
+            name: '李四',
+            bio: '',
+            email: '',
+            avatar: '',
+            link: '',
+        });
+
+        renderWithProviders(<PublicAuthorPage />);
+
+        await waitFor(() => {
+            expect(screen.getByText('我的技术博客')).toBeTruthy();
         });
     });
 });
