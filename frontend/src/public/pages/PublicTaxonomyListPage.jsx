@@ -23,7 +23,7 @@ export default function PublicTaxonomyListPage({ type }) {
   }, [slug, apiPath]);
 
   const taxonomy = isCategory ? payload?.category : payload?.tag;
-  const posts = payload?.posts || [];
+  const posts = payload?.posts?.items || [];
 
   return (
     <PublicLayout
