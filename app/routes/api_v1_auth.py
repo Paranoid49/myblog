@@ -40,19 +40,20 @@ def api_login(
     if not is_initialized(db):
         raise ConflictError("site_not_initialized", SITE_NOT_INITIALIZED)
 
-    # 速率限制检查
+    # 速率限制检查（同时限制 IP 和账户维度，防止伪造 X-Forwarded-For 绕过）
     client_ip = _get_client_ip(request)
-    if login_limiter.is_blocked(client_ip):
-        logger.warning("登录速率限制触发: IP=%s", client_ip)
+    limit_key = f"{client_ip}:{username}"
+    if login_limiter.is_blocked(limit_key):
+        logger.warning("登录速率限制触发: IP=%s, user=%s", client_ip, username)
         raise TooManyRequestsError("too_many_attempts", TOO_MANY_ATTEMPTS)
 
     user = authenticate_user(db, username, password)
     if not user:
-        login_limiter.record(client_ip)
+        login_limiter.record(limit_key)
         raise UnauthorizedError("invalid_credentials", INVALID_CREDENTIALS)
 
     # 登录成功，重置速率限制
-    login_limiter.reset(client_ip)
+    login_limiter.reset(limit_key)
     request.session["user_id"] = user.id
     return ok_response({"user_id": user.id, "username": user.username})
 

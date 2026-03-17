@@ -33,7 +33,7 @@ addopts = "--strict-markers -v --cov=app --cov-report=term-missing --cov-fail-un
 
 [tool.ruff]
 line-length = 120
-target-version = "py312"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF"]

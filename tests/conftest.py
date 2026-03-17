@@ -65,6 +65,9 @@ def db_session(setup_database: None) -> Generator[Session, None, None]:
     clear_initialized_cache()
     # 清除 RSS feed 缓存，避免测试间互相干扰
     _feed_cache.clear()
+    # 重置登录限流器，避免测试间累积触发限流
+    from app.core.rate_limiter import login_limiter
+    login_limiter._attempts.clear()
     session = TestingSessionLocal()
     try:
         # 按外键依赖顺序清空数据，避免 drop_all/create_all 的开销

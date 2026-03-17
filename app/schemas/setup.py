@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.validators import not_blank
 
@@ -13,8 +13,8 @@ class SetupStatusResponse(BaseModel):
 class SetupRequest(BaseModel):
     """站点初始化请求体"""
 
-    blog_title: str
-    username: str
+    blog_title: str = Field(..., max_length=200)
+    username: str = Field(..., max_length=64)
     password: str
     confirm_password: str
 
@@ -34,4 +34,4 @@ class SetupRequest(BaseModel):
             raise ValueError("password_needs_digit")
         if not any(c.isalpha() for c in v):
             raise ValueError("password_needs_letter")
-        return value
+        return v

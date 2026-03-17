@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from app.models import Category, Post, Tag
 from app.services.taxonomy_service import (

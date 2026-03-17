@@ -339,3 +339,38 @@ def delete_tag(db: Session, tag: Tag) -> None:
 - **影响维度**：性能 +0.5
 - **修复方案**：改用 `select(Post).options(selectinload(Post.category), selectinload(Post.tags)).where(Post.id == post_id)`
 - **状态**：✅ 已修复 — 183 passed, 覆盖率 94.71%
+
+---
+
+### 四轮评审修复 — 深度审查发现的问题（8.10 → 9.0+）
+
+> 第四轮独立评审深入到 Schema 字段与数据库列长度对齐、X-Forwarded-For 信任链、
+> CI 配置一致性等细节层面，共发现 15 项改进点，已全部实施。
+> 最终结果：188 passed, 0 failed, 覆盖率 94.43%, ruff 0 errors。
+
+#### P0 安全修复
+
+- 23. ✅ 限流 key 增加 username 维度 — `api_v1_auth.py` 限流 key 从 `ip` 改为 `ip:username`，防止伪造 X-Forwarded-For 绕过
+- 24. ✅ Schema max_length 与数据库对齐 — `setup.py` 增加 blog_title(200)/username(64)，`author.py` 增加 name(100)/email(200)/avatar(500)/link(500)
+
+#### P1 工程健壮性
+
+- 25. ✅ pyproject target-version 修正 — `py312` → `py311`，与 `requires-python>=3.11` 对齐
+- 26. ✅ CI ruff 版本固定 — `pip install ruff` → `pip install -r requirements-dev.lock`
+- 27. ✅ CI 增加前端构建验证 — frontend-lint job 增加 `npm run build` 步骤
+- 28. ✅ E501 行长度修复 — `api_v1_taxonomy.py:38` 函数参数拆分为多行
+- 29. ✅ 密码校验 strip 一致性 — `setup.py` 的 `_password_complexity` 返回 strip 后的值
+
+#### P2 测试补全
+
+- 30. ✅ 分类更新重名冲突测试 — `test_update_category_rejects_duplicate_name`
+- 31. ✅ 标签更新重名冲突测试 — `test_update_tag_rejects_duplicate_name`
+- 32. ✅ 标签删除后关联验证测试 — `test_delete_tag_removes_association_from_posts`
+- 33. ✅ 超长标题边界测试 — `test_create_post_rejects_title_exceeding_max_length`
+- 34. ✅ 超长分类名边界测试 — `test_create_category_rejects_name_exceeding_max_length`
+
+#### P3 锦上添花
+
+- 35. ✅ get_post_or_404 迁移到 deps.py — 与 get_category_or_404/get_tag_or_404 统一放置
+- 36. ✅ feed 缓存大小限制 — 最多 10 个条目，超限清除最旧的
+- 37. conftest 增加限流器重置 — 避免测试间累积触发 429

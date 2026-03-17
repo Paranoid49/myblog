@@ -5,9 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import get_current_admin, require_csrf_header
-from app.core.error_codes import POST_NOT_FOUND
-from app.core.exceptions import NotFoundError
+from app.core.deps import get_current_admin, get_post_or_404, require_csrf_header
 from app.models import Post, User
 from app.schemas.api_response import ApiResponse, ok_response
 from app.schemas.pagination import build_paginated_data
@@ -15,11 +13,9 @@ from app.schemas.post import AdminPostWriteRequest, ImportMarkdownRequest
 from app.schemas.serializers import serialize_post
 from app.services.markdown_service import build_markdown_export
 from app.services.post_service import (
-    PostNotFoundError,
     build_post_create_payload,
     build_post_from_import_markdown,
     delete_post,
-    get_post_or_raise,
     list_admin_posts,
     save_new_post,
     save_post_update,
@@ -28,14 +24,6 @@ from app.services.post_service import (
 )
 
 router = APIRouter(prefix="/api/v1", tags=["api-v1-admin-posts"])
-
-
-def get_post_or_404(post_id: int, db: Session = Depends(get_db)) -> Post:
-    """获取文章或抛出 404，用于路由依赖注入"""
-    try:
-        return get_post_or_raise(db, post_id)
-    except PostNotFoundError:
-        raise NotFoundError("post_not_found", POST_NOT_FOUND) from None
 
 
 # 后台文章管理接口

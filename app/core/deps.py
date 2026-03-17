@@ -2,9 +2,9 @@ from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.error_codes import CATEGORY_NOT_FOUND, CSRF_REJECTED, TAG_NOT_FOUND, UNAUTHORIZED
+from app.core.error_codes import CATEGORY_NOT_FOUND, CSRF_REJECTED, POST_NOT_FOUND, TAG_NOT_FOUND, UNAUTHORIZED
 from app.core.exceptions import NotFoundError
-from app.models import Category, Tag, User
+from app.models import Category, Post, Tag, User
 from app.schemas.api_response import build_error_detail
 
 UNAUTHORIZED_DETAIL = build_error_detail("unauthorized", UNAUTHORIZED)
@@ -43,3 +43,18 @@ def get_tag_or_404(tag_id: int, db: Session = Depends(get_db)) -> Tag:
     if not tag:
         raise NotFoundError("tag_not_found", TAG_NOT_FOUND)
     return tag
+
+
+def get_post_or_404(post_id: int, db: Session = Depends(get_db)) -> Post:
+    """依赖注入：获取文章或返回 404，预加载 category 和 tags"""
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+
+    post = db.execute(
+        select(Post)
+        .options(selectinload(Post.category), selectinload(Post.tags))
+        .where(Post.id == post_id)
+    ).scalar_one_or_none()
+    if not post:
+        raise NotFoundError("post_not_found", POST_NOT_FOUND)
+    return post

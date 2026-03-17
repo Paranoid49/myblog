@@ -35,7 +35,12 @@ def get_category_posts_api(
 
 
 @router.get("/tags/{slug}", response_model=ApiResponse, summary="获取标签下文章列表")
-def get_tag_posts_api(slug: str, page: int = Query(default=1, ge=1), page_size: int = Query(default=20, ge=1, le=100), db: Session = Depends(get_db)) -> JSONResponse:
+def get_tag_posts_api(
+    slug: str,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     tag, posts, total = get_published_posts_by_tag(db, slug, page, page_size)
     if not tag:
         raise NotFoundError("tag_not_found", TAG_NOT_FOUND)

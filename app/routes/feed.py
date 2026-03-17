@@ -13,8 +13,9 @@ from app.services.setup_service import get_site_settings
 
 router = APIRouter(tags=["feed"])
 
-# RSS 内存缓存：按 base_url 分别缓存，避免不同域名访问时 URL 不一致
+# RSS 内存缓存：按 base_url 分别缓存，最多保留 10 个条目防止内存增长
 _feed_cache: dict = {}
+_FEED_CACHE_MAX_SIZE = 10
 
 
 @router.get("/feed.xml", include_in_schema=False)
@@ -49,6 +50,10 @@ def rss_feed(request: Request, db: Session = Depends(get_db)) -> Response:
     </channel>
 </rss>"""
 
+    # 缓存条目数超限时清除最旧的
+    if len(_feed_cache) >= _FEED_CACHE_MAX_SIZE:
+        oldest_key = min(_feed_cache, key=lambda k: _feed_cache[k]["expires"])
+        del _feed_cache[oldest_key]
     _feed_cache[base_url] = {"xml": xml, "expires": time.time() + 300}
 
     return Response(content=xml, media_type="application/rss+xml")
