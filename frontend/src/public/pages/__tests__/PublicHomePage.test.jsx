@@ -40,7 +40,7 @@ describe('PublicHomePage', () => {
     it('无文章时显示空状态提示', async () => {
         // apiRequest('/posts') 返回空数组，apiRequest('/author') 返回作者信息
         apiRequest.mockImplementation((path) => {
-            if (path === '/posts') return Promise.resolve([]);
+            if (path.startsWith('/posts')) return Promise.resolve({ items: [], total: 0, page: 1, page_size: 20, total_pages: 0 });
             if (path === '/author') return Promise.resolve({ blog_title: '测试博客' });
             return Promise.resolve(null);
         });
@@ -71,7 +71,7 @@ describe('PublicHomePage', () => {
         ];
 
         apiRequest.mockImplementation((path) => {
-            if (path === '/posts') return Promise.resolve(mockPosts);
+            if (path.startsWith('/posts')) return Promise.resolve({ items: mockPosts, total: 1, page: 1, page_size: 20, total_pages: 1 });
             if (path === '/author') return Promise.resolve({ blog_title: '测试博客' });
             return Promise.resolve(null);
         });
