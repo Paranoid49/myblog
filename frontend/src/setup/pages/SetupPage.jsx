@@ -65,9 +65,8 @@ export default function SetupPage() {
   return (
     <div className="site-frame center-frame">
       <div className="panel-card setup-card">
-        <p className="admin-kicker">Setup</p>
-        <h2 className="mono-heading mb-sm">
-          {'>'} 博客初始化
+        <h2 className="mb-sm">
+          博客初始化
         </h2>
         <p className="muted mb-lg">
           首次运行，请设置站点信息和管理员账号。

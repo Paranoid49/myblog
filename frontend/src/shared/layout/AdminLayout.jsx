@@ -20,8 +20,7 @@ export default function AdminLayout({ title, description, navigate, children }) 
     <div className="admin-frame">
       <aside className="admin-sidebar">
         <div>
-          <p className="admin-kicker">控制台</p>
-          <h1 className="admin-brand">myblog</h1>
+          <h1 className="admin-brand"><Link to="/admin">myblog</Link></h1>
           <p className="muted admin-user-info">
             {user?.username || 'unknown'}
           </p>

@@ -23,11 +23,10 @@ export default function AdminHomePage() {
 
   return (
     <AdminLayout title="概览" description="集中管理文章、分类标签与作者资料。" navigate={navigate}>
-      {/* 统计卡片 */}
-      <div className="toolbar-row">
-        <div className="panel-card">📝 文章 {stats.posts} 篇</div>
-        <div className="panel-card">📂 分类 {stats.categories} 个</div>
-        <div className="panel-card">🏷️ 标签 {stats.tags} 个</div>
+      <div className="toolbar-row mb-lg">
+        <div className="panel-card">文章 {stats.posts} 篇</div>
+        <div className="panel-card">分类 {stats.categories} 个</div>
+        <div className="panel-card">标签 {stats.tags} 个</div>
       </div>
 
       <section className="dashboard-grid">

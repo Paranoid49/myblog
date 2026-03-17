@@ -44,9 +44,8 @@ export default function LoginPage() {
   return (
     <div className="site-frame center-frame">
       <div className="panel-card auth-card">
-        <p className="admin-kicker">Authentication</p>
-        <h2 className="mono-heading mb-md">
-          {'>'} 登录
+        <h2 className="mb-md">
+          登录
         </h2>
 
         {error ? <div className="notice error">{error}</div> : null}

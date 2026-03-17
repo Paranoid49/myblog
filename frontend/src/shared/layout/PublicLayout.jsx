@@ -1,5 +1,4 @@
 import { Link, useLocation } from 'react-router-dom';
-import { getAdminEntryPath } from '../auth/session';
 import { useTheme } from '../theme/ThemeProvider';
 import { useSite } from '../site/SiteProvider';
 
@@ -14,24 +13,15 @@ export default function PublicLayout({ title, description, children }) {
     <div className="site-frame">
       <header className="site-header">
         <div className="site-header-inner">
-          <div>
-            <Link className="brand-link" to="/">{blogTitle || 'myblog'}</Link>
-            <p className="site-description">技术博客 · React + FastAPI</p>
-          </div>
+          <Link className="brand-link" to="/">{blogTitle || 'myblog'}</Link>
           <nav className="site-nav">
             <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>
               首页
             </Link>
             <Link to="/author" className={`nav-link ${isActive('/author') ? 'active' : ''}`}>
-              作者
+              关于
             </Link>
-            <Link to="/categories" className={`nav-link ${isActive('/categories') ? 'active' : ''}`}>
-              分类
-            </Link>
-            <Link to={getAdminEntryPath()} className="nav-link">
-              后台
-            </Link>
-            <button type="button" className="ghost-button" onClick={toggleTheme}>
+            <button type="button" className="ghost-button theme-toggle" onClick={toggleTheme} aria-label="切换主题">
               {theme === 'dark' ? '☀' : '☾'}
             </button>
           </nav>
@@ -39,15 +29,17 @@ export default function PublicLayout({ title, description, children }) {
       </header>
 
       <main className="app-shell public-shell">
-        <section className="page-hero">
-          <h1>{title}</h1>
-          {description ? <p className="hero-description muted">{description}</p> : null}
-        </section>
+        {title ? (
+          <section className="page-hero">
+            <h1>{title}</h1>
+            {description ? <p className="hero-description muted">{description}</p> : null}
+          </section>
+        ) : null}
         {children}
       </main>
 
       <footer className="site-footer">
-        myblog · 基于 React + FastAPI 构建
+        &copy; {new Date().getFullYear()} {blogTitle || 'myblog'}
       </footer>
     </div>
   );

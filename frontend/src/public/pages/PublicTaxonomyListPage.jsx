@@ -30,9 +30,6 @@ export default function PublicTaxonomyListPage({ type }) {
       title={taxonomy?.name || `${label}文章`}
       description={taxonomy ? `${label}：${isCategory ? '' : '#'}${taxonomy.name}` : `按${label}浏览文章。`}
     >
-      <p className="mb-lg">
-        <Link to="/" className="nav-link">← 返回首页</Link>
-      </p>
       {error ? <div className="notice error">{error}</div> : null}
       {!payload ? <div className="notice muted">加载中...</div> : null}
       {payload && !posts.length ? <div className="notice muted">该{label}下暂无已发布文章。</div> : null}

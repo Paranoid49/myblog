@@ -19,11 +19,7 @@ export default function PublicPostDetailPage() {
   }, [slug]);
 
   return (
-    <PublicLayout title={post?.title || '文章详情'} description={post?.summary || ''}>
-      <p className="mb-lg">
-        <Link to="/" className="nav-link">← 返回首页</Link>
-      </p>
-
+    <PublicLayout title="" description="">
       {error ? <div className="notice error">{error}</div> : null}
       {!post ? <PostDetailSkeleton /> : null}
 

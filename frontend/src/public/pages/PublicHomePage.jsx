@@ -27,7 +27,7 @@ export default function PublicHomePage() {
   }, [page]);
 
   return (
-    <PublicLayout title="首页" description="记录技术实践、代码思考与系统构建。">
+    <PublicLayout title="" description="">
       {error ? <div className="notice error">{error}</div> : null}
       {!loaded ? (
         <PostListSkeleton />
@@ -37,9 +37,6 @@ export default function PublicHomePage() {
       ) : null}
 
       <section className="post-list-grid">
-        {loaded && posts.length > 0 && (
-          <p className="muted">共 {totalPosts} 篇文章</p>
-        )}
         {posts.map((post) => (
           <article key={post.id} className="post-card">
             <div className="post-meta-row">

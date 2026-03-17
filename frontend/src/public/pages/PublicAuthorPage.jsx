@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { apiRequest } from '../../shared/api/client';
 import PublicLayout from '../../shared/layout/PublicLayout';
 
@@ -22,10 +21,6 @@ export default function PublicAuthorPage() {
 
   return (
     <PublicLayout title="关于作者" description="站点作者的基本资料与联系方式。">
-      <p className="mb-lg">
-        <Link to="/" className="nav-link">← 返回首页</Link>
-      </p>
-
       {error ? <div className="notice error">{error}</div> : null}
       {!author ? <div className="notice muted">加载中...</div> : null}
 

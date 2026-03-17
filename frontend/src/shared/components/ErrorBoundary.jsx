@@ -25,7 +25,7 @@ export default class ErrorBoundary extends Component {
             return (
                 <div className="site-frame center-frame">
                     <div className="panel-card auth-card">
-                        <h2 className="mono-heading mb-md">出错了</h2>
+                        <h2 className="mb-md">出错了</h2>
                         <p className="muted mb-lg">页面遇到了意外错误，请刷新重试。</p>
                         <button
                             className="primary-button"
