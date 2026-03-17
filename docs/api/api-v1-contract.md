@@ -190,7 +190,7 @@
 - 成功：200
 - 失败：404（`1404`）
 
-### 6.5 POST `/api/v1/admin/posts/{post_id}`
+### 6.5 PUT `/api/v1/admin/posts/{post_id}`
 - 说明：更新指定文章
 - 入参（JSON）：
   - `title: string`
@@ -201,7 +201,7 @@
 - 成功：200
 - 失败：404（`1404`）
 
-### 6.6 POST `/api/v1/admin/posts/{post_id}/delete`
+### 6.6 DELETE `/api/v1/admin/posts/{post_id}`
 - 说明：删除指定文章
 - 成功：200
 - 失败：404（`1404`）

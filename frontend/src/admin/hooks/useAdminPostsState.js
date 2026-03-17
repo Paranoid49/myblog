@@ -76,8 +76,9 @@ export default function useAdminPostsState() {
   async function submitForm(event) {
     event.preventDefault();
     const payload = toPostPayload(form);
+    const method = form.id ? 'PUT' : 'POST';
     const succeeded = await runWithFeedback(
-      () => apiRequest(buildPostRequestPath(form.id), buildJsonRequestOptions(payload)),
+      () => apiRequest(buildPostRequestPath(form.id), buildJsonRequestOptions(payload, method)),
       {
         setError,
         setMessage,
@@ -188,7 +189,7 @@ export default function useAdminPostsState() {
   async function deletePost(postId) {
     if (!window.confirm('确定删除这篇文章？')) return;
     const succeeded = await runWithFeedback(
-      () => apiRequest(`/admin/posts/${postId}/delete`, { method: 'POST' }),
+      () => apiRequest(`/admin/posts/${postId}`, { method: 'DELETE' }),
       {
         setError,
         setMessage,

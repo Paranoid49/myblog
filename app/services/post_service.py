@@ -166,8 +166,12 @@ class PostNotFoundError(Exception):
 
 
 def get_post_or_raise(db: Session, post_id: int) -> Post:
-    """根据 ID 获取文章，不存在则抛出 PostNotFoundError。"""
-    post = db.get(Post, post_id)
+    """根据 ID 获取文章，不存在则抛出 PostNotFoundError。预加载 category 和 tags 避免 N+1。"""
+    post = db.execute(
+        select(Post)
+        .options(selectinload(Post.category), selectinload(Post.tags))
+        .where(Post.id == post_id)
+    ).scalar_one_or_none()
     if not post:
         raise PostNotFoundError()
     return post

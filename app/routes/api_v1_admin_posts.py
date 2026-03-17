@@ -88,7 +88,7 @@ def import_markdown_post_api(
     return ok_response(serialize_post(post), status_code=status.HTTP_201_CREATED)
 
 
-@router.post("/admin/posts/{post_id}", response_model=ApiResponse, summary="更新文章")
+@router.put("/admin/posts/{post_id}", response_model=ApiResponse, summary="更新文章")
 def update_admin_post_api(
     payload: AdminPostWriteRequest,
     post: Post = Depends(get_post_or_404),
@@ -142,7 +142,7 @@ def unpublish_post_api(
     return ok_response(serialize_post(post))
 
 
-@router.post("/admin/posts/{post_id}/delete", response_model=ApiResponse, summary="删除文章")
+@router.delete("/admin/posts/{post_id}", response_model=ApiResponse, summary="删除文章")
 def delete_post_api(
     post: Post = Depends(get_post_or_404),
     current_admin: User = Depends(get_current_admin),

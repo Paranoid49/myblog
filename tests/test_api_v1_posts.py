@@ -226,7 +226,7 @@ def test_api_get_tag_posts_success(client, initialized_site, admin_user, seeded_
 
 
 def test_api_update_admin_post_success(client, logged_in_admin, seeded_post) -> None:
-    response = client.post(
+    response = client.put(
         f"/api/v1/admin/posts/{seeded_post.id}",
         json={
             "title": "Updated Title",
@@ -245,7 +245,7 @@ def test_api_update_admin_post_success(client, logged_in_admin, seeded_post) -> 
 
 
 def test_api_update_admin_post_returns_404_for_missing_post(client, logged_in_admin) -> None:
-    response = client.post(
+    response = client.put(
         "/api/v1/admin/posts/999999",
         json={
             "title": "Updated Title",

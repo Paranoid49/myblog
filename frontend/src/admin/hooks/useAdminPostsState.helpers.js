@@ -31,9 +31,9 @@ export function toEditForm(post) {
   };
 }
 
-export function buildJsonRequestOptions(payload) {
+export function buildJsonRequestOptions(payload, method = 'POST') {
   return {
-    method: 'POST',
+    method,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   };

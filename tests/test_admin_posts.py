@@ -80,12 +80,12 @@ def test_admin_can_delete_post(client, logged_in_admin, seeded_category):
         "tag_ids": [],
     })
     post_id = resp.json()["data"]["id"]
-    delete_resp = client.post(f"/api/v1/admin/posts/{post_id}/delete")
+    delete_resp = client.delete(f"/api/v1/admin/posts/{post_id}")
     assert delete_resp.status_code == 200
     assert delete_resp.json()["code"] == 0
 
 
 def test_admin_delete_post_returns_404_for_missing(client, logged_in_admin):
     """删除不存在的文章返回 404"""
-    resp = client.post("/api/v1/admin/posts/99999/delete")
+    resp = client.delete("/api/v1/admin/posts/99999")
     assert resp.status_code == 404

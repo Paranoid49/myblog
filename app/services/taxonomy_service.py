@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from sqlalchemy import delete as sa_delete
 from sqlalchemy import func, select
 from sqlalchemy import update as sa_update
 from sqlalchemy.orm import Session, selectinload
@@ -123,8 +124,9 @@ def update_tag(db: Session, tag: Tag, new_name: str) -> Tag:
 
 
 def delete_tag(db: Session, tag: Tag) -> None:
-    """删除标签，自动解除与文章的关联"""
-    tag.posts = []  # 清空关联
+    """删除标签，批量解除与文章的关联"""
+    from app.models.post import post_tags
+    db.execute(sa_delete(post_tags).where(post_tags.c.tag_id == tag.id))
     db.delete(tag)
     db.commit()
 

@@ -6,7 +6,8 @@
 > **制定日期**：2026-03-17
 > **完成日期**：2026-03-17
 > **评审方法**：3 路并行代码审查 + 逐项代码验证 + 哲学合规自检
-> **最终状态**：✅ 全部完成（183 passed, 0 failed, 覆盖率 94.58%）
+> **首轮整改结果**：✅ 17/17 项全部完成（183 passed, 0 failed, 覆盖率 94.58%）
+> **二轮独立评审**：8.78 / 10（A-），较首轮基准 +0.72
 
 ---
 
@@ -254,3 +255,87 @@ ruff check app/：0 errors（排除 1 个历史遗留 E501）
 | 分布式锁解决 Slug 竞态 | 个人博客场景并发极低，数据库唯一约束已是足够的兜底方案 |
 | 多作者权限体系 | 当前为单管理员设计，引入 RBAC 违反"功能恰好够用"原则 |
 | 文件缓存/Redis 缓存 Feed | 内存缓存 + 5 分钟过期完全满足需求，引入外部缓存违反"轻量"原则 |
+
+---
+
+## 二轮独立评审发现的改进空间（8.78 → 9.5+）
+
+> 以下 4 项由第二轮全新外部视角独立评审发现，均为"锦上添花"级改进。
+> 已于 2026-03-17 当日全部实施完成。183 passed, 0 failed, 覆盖率 94.71%。
+
+### P1 — 应该修复（一致性 / 可维护性）
+
+#### 18. ✅ 文章管理路由 HTTP 方法规范化
+
+- **事实依据**：`api_v1_admin_taxonomy.py` 已使用 PUT/DELETE，但 `api_v1_admin_posts.py` 的更新（`POST /{post_id}`）和删除（`POST /{post_id}/delete`）仍为 POST，两个管理端路由风格不统一
+- **影响维度**：架构一致性 +0.3
+- **整改方案**：
+  - `POST /admin/posts/{post_id}` → `PUT /admin/posts/{post_id}`
+  - `POST /admin/posts/{post_id}/delete` → `DELETE /admin/posts/{post_id}`
+  - 同步修改前端 API 调用、后端测试、`api-v1-contract.md` 第 6 节
+- **复杂度**：中（前后端联动 + 文档同步）
+- **哲学合规**：遵循 HTTP 标准语义，与 taxonomy 路由对齐
+- **状态**：✅ 已完成 — 后端 PUT/DELETE + 前端同步 + 测试同步 + api-v1-contract.md 第 6 节已更新
+
+---
+
+#### 19. ✅ 序列化层重构：手动映射 → Pydantic from_attributes
+
+- **事实依据**：`app/schemas/serializers.py` 通过手动字典映射将 ORM 对象转为 JSON，当模型字段增减时需手动同步，存在遗漏风险
+- **影响维度**：代码质量 +0.2
+- **整改方案**：
+  - 为每个模型定义 Pydantic 响应 Schema（如 `PostResponse`），设置 `model_config = ConfigDict(from_attributes=True)`
+  - 在路由层用 `PostResponse.model_validate(post)` 替代 `serialize_post(post)`
+  - 删除 `serializers.py` 中的手动映射函数
+- **复杂度**：中（涉及多个 Schema 和路由文件）
+- **哲学合规**：利用 FastAPI/Pydantic 原生能力，减少自维护代码量，符合"克制"原则
+- **注意**：需确保嵌套关系（如 Post 含 category、tags）的序列化行为一致
+- **状态**：✅ 已完成 — 新增 TagResponse/CategoryResponse/PostResponse/AuthorResponse 四个 Pydantic 模型，serialize_* 函数签名不变，内部改用 model_validate + model_dump
+
+---
+
+### P2 — 建议改进（锦上添花）
+
+#### 20. ✅ 标签删除批量解除关联
+
+- **事实依据**：`taxonomy_service.py:127` 使用 `tag.posts = []` ORM 级联清空关联，对于大量关联文章会生成逐条 DELETE 语句
+- **影响维度**：性能 +0.1
+- **整改方案**：
+```python
+# 修改前
+def delete_tag(db: Session, tag: Tag) -> None:
+    tag.posts = []  # 逐条 DELETE
+    db.delete(tag)
+    db.commit()
+
+# 修改后
+from app.models.post import post_tags
+
+def delete_tag(db: Session, tag: Tag) -> None:
+    db.execute(delete(post_tags).where(post_tags.c.tag_id == tag.id))
+    db.delete(tag)
+    db.commit()
+```
+- **复杂度**：低（3 行改动）
+- **哲学合规**：与 `delete_category` 的批量更新模式保持一致
+- **状态**：✅ 已完成 — 改用 `sa_delete(post_tags).where(...)` 批量删除关联
+
+---
+
+#### 21. ✅ 文章路由 get_or_404 Depends 模式统一
+
+- **事实依据**：`api_v1_admin_posts.py:33-38` 已定义本地 `get_post_or_404` 依赖函数并在所有写接口中使用 `Depends(get_post_or_404)`，与 taxonomy 的模式一致
+- **影响维度**：代码质量 +0.1
+- **状态**：✅ 已确认存在 — 无需修改，admin_posts.py 已独立实现该模式
+
+---
+
+### 三轮评审修复 — 新发现的实质性问题
+
+#### 22. ✅ get_post_or_raise 缺少 selectinload（N+1 问题）
+
+- **发现阶段**：第三轮独立评审
+- **事实依据**：`post_service.py:168-173` 的 `get_post_or_raise` 使用 `db.get(Post, post_id)` 无预加载，后续 `serialize_post` 访问 `post.category` 和 `post.tags` 时触发懒加载（2 次额外 SQL），影响 PUT/DELETE/publish/unpublish 4 个管理端点
+- **影响维度**：性能 +0.5
+- **修复方案**：改用 `select(Post).options(selectinload(Post.category), selectinload(Post.tags)).where(Post.id == post_id)`
+- **状态**：✅ 已修复 — 183 passed, 覆盖率 94.71%
