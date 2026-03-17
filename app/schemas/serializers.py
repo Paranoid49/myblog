@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 class TagResponse(BaseModel):
     """标签响应体"""
+
     model_config = ConfigDict(from_attributes=True)
     id: int
     name: str
@@ -25,6 +26,7 @@ class TagResponse(BaseModel):
 
 class CategoryResponse(BaseModel):
     """分类响应体"""
+
     model_config = ConfigDict(from_attributes=True)
     id: int
     name: str
@@ -33,6 +35,7 @@ class CategoryResponse(BaseModel):
 
 class PostResponse(BaseModel):
     """文章响应体"""
+
     id: int
     title: str
     slug: str
@@ -48,6 +51,7 @@ class PostResponse(BaseModel):
 
 class AuthorResponse(BaseModel):
     """作者信息响应体"""
+
     blog_title: str
     name: str
     bio: str

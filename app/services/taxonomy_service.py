@@ -52,9 +52,13 @@ def get_published_posts_by_category(
     if not category:
         return None, [], 0
 
-    base = select(Post).options(selectinload(Post.category), selectinload(Post.tags)).where(
-        Post.category_id == category.id,
-        Post.published_at.is_not(None),
+    base = (
+        select(Post)
+        .options(selectinload(Post.category), selectinload(Post.tags))
+        .where(
+            Post.category_id == category.id,
+            Post.published_at.is_not(None),
+        )
     )
     total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
     posts = list(
@@ -78,9 +82,13 @@ def get_published_posts_by_tag(
     if not tag:
         return None, [], 0
 
-    base = select(Post).options(selectinload(Post.category), selectinload(Post.tags)).where(
-        Post.published_at.is_not(None),
-        Post.id.in_(select(post_tags.c.post_id).where(post_tags.c.tag_id == tag.id)),
+    base = (
+        select(Post)
+        .options(selectinload(Post.category), selectinload(Post.tags))
+        .where(
+            Post.published_at.is_not(None),
+            Post.id.in_(select(post_tags.c.post_id).where(post_tags.c.tag_id == tag.id)),
+        )
     )
     total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
     posts = list(
@@ -107,9 +115,8 @@ def delete_category(db: Session, category: Category) -> None:
     default_id = resolve_category_id(db, None)
     # 批量更新：将该分类下的文章迁移到默认分类
     from app.models.post import Post
-    db.execute(
-        sa_update(Post).where(Post.category_id == category.id).values(category_id=default_id)
-    )
+
+    db.execute(sa_update(Post).where(Post.category_id == category.id).values(category_id=default_id))
     db.delete(category)
     db.commit()
 
@@ -126,6 +133,7 @@ def update_tag(db: Session, tag: Tag, new_name: str) -> Tag:
 def delete_tag(db: Session, tag: Tag) -> None:
     """删除标签，批量解除与文章的关联"""
     from app.models.post import post_tags
+
     db.execute(sa_delete(post_tags).where(post_tags.c.tag_id == tag.id))
     db.delete(tag)
     db.commit()

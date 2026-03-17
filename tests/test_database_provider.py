@@ -6,6 +6,7 @@ from app.core.database_provider import create_app_engine
 # psycopg 为可选依赖，未安装时跳过 PostgreSQL 测试
 try:
     import psycopg  # noqa: F401
+
     _has_psycopg = True
 except ImportError:
     _has_psycopg = False

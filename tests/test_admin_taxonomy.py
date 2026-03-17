@@ -112,9 +112,14 @@ def test_delete_tag_removes_association_from_posts(client, logged_in_admin):
     """删除标签后，文章的标签列表不再包含该标签"""
     tag_resp = client.post("/api/v1/admin/tags", json={"name": "临时标签"})
     tag_id = tag_resp.json()["data"]["id"]
-    post_resp = client.post("/api/v1/admin/posts", json={
-        "title": "测试文章", "content": "内容", "tag_ids": [tag_id],
-    })
+    post_resp = client.post(
+        "/api/v1/admin/posts",
+        json={
+            "title": "测试文章",
+            "content": "内容",
+            "tag_ids": [tag_id],
+        },
+    )
     post_id = post_resp.json()["data"]["id"]
     # 发布文章使其可通过公开接口查询
     client.post(f"/api/v1/admin/posts/{post_id}/publish")
@@ -128,9 +133,13 @@ def test_delete_tag_removes_association_from_posts(client, logged_in_admin):
 
 def test_create_post_rejects_title_exceeding_max_length(client, logged_in_admin):
     """文章标题超过 200 字符时返回 422"""
-    resp = client.post("/api/v1/admin/posts", json={
-        "title": "A" * 201, "content": "内容",
-    })
+    resp = client.post(
+        "/api/v1/admin/posts",
+        json={
+            "title": "A" * 201,
+            "content": "内容",
+        },
+    )
     assert resp.status_code == 422
 
 

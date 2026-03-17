@@ -51,9 +51,7 @@ def get_post_or_404(post_id: int, db: Session = Depends(get_db)) -> Post:
     from sqlalchemy.orm import selectinload
 
     post = db.execute(
-        select(Post)
-        .options(selectinload(Post.category), selectinload(Post.tags))
-        .where(Post.id == post_id)
+        select(Post).options(selectinload(Post.category), selectinload(Post.tags)).where(Post.id == post_id)
     ).scalar_one_or_none()
     if not post:
         raise NotFoundError("post_not_found", POST_NOT_FOUND)

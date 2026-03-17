@@ -140,9 +140,7 @@ def list_published_posts(db: Session, page: int = 1, page_size: int = 20) -> tup
     page = max(1, page)
     page_size = max(1, min(page_size, 100))
     base = (
-        select(Post)
-        .options(selectinload(Post.category), selectinload(Post.tags))
-        .where(Post.published_at.is_not(None))
+        select(Post).options(selectinload(Post.category), selectinload(Post.tags)).where(Post.published_at.is_not(None))
     )
     total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
     posts = list(

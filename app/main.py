@@ -5,6 +5,7 @@ from pathlib import Path
 # 版本号单一来源：优先从包元数据读取，回退到硬编码默认值
 try:
     from importlib.metadata import version as get_version
+
     APP_VERSION = get_version("myblog")
 except Exception:
     APP_VERSION = "1.0.0"
