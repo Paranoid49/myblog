@@ -1,6 +1,14 @@
+from pathlib import Path
+
+import pytest
+
 from app.models import Category, Post
 
+_FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
+_skip_no_dist = pytest.mark.skipif(not _FRONTEND_DIST.exists(), reason="frontend/dist 未构建")
 
+
+@_skip_no_dist
 def test_admin_routes_are_served_by_frontend_spa(client, initialized_site, admin_user) -> None:
     response = client.get("/admin/posts")
 

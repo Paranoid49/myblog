@@ -1,12 +1,20 @@
 from pathlib import Path
 
+import pytest
 
+# SPA 测试依赖前端构建产物，CI 中后端测试 job 可能未构建前端
+_FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
+_skip_no_dist = pytest.mark.skipif(not _FRONTEND_DIST.exists(), reason="frontend/dist 未构建")
+
+
+@_skip_no_dist
 def test_setup_page_is_served_by_spa(client) -> None:
     response = client.get("/setup")
     assert response.status_code == 200
     assert '<div id="root"></div>' in response.text
 
 
+@_skip_no_dist
 def test_homepage_returns_frontend_index_when_initialized(client, db_session) -> None:
     from app.models import SiteSettings
     from app.services.auth_service import build_admin_user
@@ -30,36 +38,42 @@ def test_homepage_returns_frontend_index_when_initialized(client, db_session) ->
     assert '<div id="root"></div>' in response.text
 
 
+@_skip_no_dist
 def test_post_detail_uses_frontend_index(client, initialized_site, admin_user, seeded_post) -> None:
     response = client.get("/posts/my-first-post")
     assert response.status_code == 200
     assert '<div id="root"></div>' in response.text
 
 
+@_skip_no_dist
 def test_category_page_uses_frontend_index(client, initialized_site, admin_user) -> None:
     response = client.get("/categories/python")
     assert response.status_code == 200
     assert '<div id="root"></div>' in response.text
 
 
+@_skip_no_dist
 def test_tag_page_uses_frontend_index(client, initialized_site, admin_user) -> None:
     response = client.get("/tags/fastapi")
     assert response.status_code == 200
     assert '<div id="root"></div>' in response.text
 
 
+@_skip_no_dist
 def test_author_page_uses_frontend_index(client, initialized_site, admin_user) -> None:
     response = client.get("/author")
     assert response.status_code == 200
     assert '<div id="root"></div>' in response.text
 
 
+@_skip_no_dist
 def test_admin_page_uses_frontend_index(client, initialized_site, admin_user) -> None:
     response = client.get("/admin")
     assert response.status_code == 200
     assert '<div id="root"></div>' in response.text
 
 
+@_skip_no_dist
 def test_frontend_dist_exists_for_spa_entry() -> None:
     index_file = Path(__file__).resolve().parents[1] / "frontend" / "dist" / "index.html"
     assert index_file.exists()

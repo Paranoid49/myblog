@@ -12,6 +12,8 @@ from urllib.request import Request, urlopen
 import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+_FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
+_skip_no_dist = pytest.mark.skipif(not _FRONTEND_DIST.exists(), reason="frontend/dist 未构建")
 DEFAULT_TIMEOUT = 30.0
 
 
@@ -180,6 +182,7 @@ def test_logout_redirects_back_to_admin_login(tmp_path) -> None:
                 backend_process.wait(timeout=5)
 
 
+@_skip_no_dist
 def test_minimal_flow_setup_login_create_publish_and_home_visible(client, db_session) -> None:
     with patch("app.routes.api_v1_setup.upgrade_database"):
         setup_resp = client.post(

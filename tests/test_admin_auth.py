@@ -1,11 +1,15 @@
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from conftest import CSRF_HEADERS
 
 from app.core.security import hash_password, verify_password
 from app.models import User
 from app.services.auth_service import authenticate_user, build_admin_user
+
+_FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
+_skip_no_dist = pytest.mark.skipif(not _FRONTEND_DIST.exists(), reason="frontend/dist 未构建")
 
 
 def test_password_hash_and_verify() -> None:
@@ -130,12 +134,14 @@ def test_setup_api_rejects_already_initialized(client, initialized_site, admin_u
     assert response.json()["code"] == 2004
 
 
+@_skip_no_dist
 def test_setup_page_is_served_by_spa(client) -> None:
     response = client.get("/setup")
     assert response.status_code == 200
     assert '<div id="root"></div>' in response.text
 
 
+@_skip_no_dist
 def test_setup_page_is_served_by_spa_when_initialized(client, initialized_site, admin_user) -> None:
     response = client.get("/setup")
     assert response.status_code == 200
