@@ -45,7 +45,7 @@ def test_admin_can_update_category(client, logged_in_admin):
     """管理员可以重命名分类"""
     create_resp = client.post("/api/v1/admin/categories", json={"name": "旧名称"})
     cat_id = create_resp.json()["data"]["id"]
-    update_resp = client.post(f"/api/v1/admin/categories/{cat_id}", json={"name": "新名称"})
+    update_resp = client.put(f"/api/v1/admin/categories/{cat_id}", json={"name": "新名称"})
     assert update_resp.status_code == 200
     assert update_resp.json()["data"]["name"] == "新名称"
 
@@ -54,7 +54,7 @@ def test_admin_can_delete_category(client, logged_in_admin):
     """管理员可以删除分类"""
     create_resp = client.post("/api/v1/admin/categories", json={"name": "待删除分类"})
     cat_id = create_resp.json()["data"]["id"]
-    delete_resp = client.post(f"/api/v1/admin/categories/{cat_id}/delete")
+    delete_resp = client.delete(f"/api/v1/admin/categories/{cat_id}")
     assert delete_resp.status_code == 200
     assert delete_resp.json()["code"] == 0
 
@@ -63,7 +63,7 @@ def test_admin_can_update_tag(client, logged_in_admin):
     """管理员可以重命名标签"""
     create_resp = client.post("/api/v1/admin/tags", json={"name": "旧标签"})
     tag_id = create_resp.json()["data"]["id"]
-    update_resp = client.post(f"/api/v1/admin/tags/{tag_id}", json={"name": "新标签"})
+    update_resp = client.put(f"/api/v1/admin/tags/{tag_id}", json={"name": "新标签"})
     assert update_resp.status_code == 200
     assert update_resp.json()["data"]["name"] == "新标签"
 
@@ -72,6 +72,6 @@ def test_admin_can_delete_tag(client, logged_in_admin):
     """管理员可以删除标签"""
     create_resp = client.post("/api/v1/admin/tags", json={"name": "待删除标签"})
     tag_id = create_resp.json()["data"]["id"]
-    delete_resp = client.post(f"/api/v1/admin/tags/{tag_id}/delete")
+    delete_resp = client.delete(f"/api/v1/admin/tags/{tag_id}")
     assert delete_resp.status_code == 200
     assert delete_resp.json()["code"] == 0

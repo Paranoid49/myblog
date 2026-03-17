@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.validators import not_blank
+
 
 class AdminPostWriteRequest(BaseModel):
     """后台文章创建/更新统一请求体"""
@@ -13,9 +15,7 @@ class AdminPostWriteRequest(BaseModel):
     @field_validator("title", "content")
     @classmethod
     def _must_not_be_blank(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("must_not_be_blank")
-        return value
+        return not_blank(value)
 
 
 class ImportMarkdownRequest(BaseModel):
@@ -26,6 +26,4 @@ class ImportMarkdownRequest(BaseModel):
     @field_validator("markdown")
     @classmethod
     def _markdown_not_blank(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("must_not_be_blank")
-        return value
+        return not_blank(value)

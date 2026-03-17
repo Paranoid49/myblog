@@ -1,8 +1,8 @@
 # 后端基础镜像
 FROM python:3.12-slim AS backend
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.lock .
+RUN pip install --no-cache-dir -r requirements.lock
 COPY . .
 
 # 前端构建阶段

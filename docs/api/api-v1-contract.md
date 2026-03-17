@@ -238,13 +238,13 @@
 - 成功：201
 - 失败：409（`1409`）
 
-### 7.3 POST `/api/v1/admin/categories/{category_id}`
+### 7.3 PUT `/api/v1/admin/categories/{category_id}`
 - 说明：重命名分类
 - 入参（JSON）：`{ "name": "新分类名" }`
 - 成功：200
 - 失败：404（`1413`）、409（`1409`）
 
-### 7.4 POST `/api/v1/admin/categories/{category_id}/delete`
+### 7.4 DELETE `/api/v1/admin/categories/{category_id}`
 - 说明：删除分类
 - 成功：200
 - 失败：404（`1413`）
@@ -256,13 +256,13 @@
 - 成功：201
 - 失败：409（`1410`）
 
-### 7.6 POST `/api/v1/admin/tags/{tag_id}`
+### 7.6 PUT `/api/v1/admin/tags/{tag_id}`
 - 说明：重命名标签
 - 入参（JSON）：`{ "name": "新标签名" }`
 - 成功：200
 - 失败：404（`1414`）、409（`1410`）
 
-### 7.7 POST `/api/v1/admin/tags/{tag_id}/delete`
+### 7.7 DELETE `/api/v1/admin/tags/{tag_id}`
 - 说明：删除标签
 - 成功：200
 - 失败：404（`1414`）

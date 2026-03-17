@@ -2,8 +2,9 @@ from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.error_codes import CSRF_REJECTED, UNAUTHORIZED
-from app.models import User
+from app.core.error_codes import CATEGORY_NOT_FOUND, CSRF_REJECTED, TAG_NOT_FOUND, UNAUTHORIZED
+from app.core.exceptions import NotFoundError
+from app.models import Category, Tag, User
 from app.schemas.api_response import build_error_detail
 
 UNAUTHORIZED_DETAIL = build_error_detail("unauthorized", UNAUTHORIZED)
@@ -26,3 +27,19 @@ def get_current_admin(request: Request, db: Session = Depends(get_db)) -> User:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=UNAUTHORIZED_DETAIL)
 
     return user
+
+
+def get_category_or_404(category_id: int, db: Session = Depends(get_db)) -> Category:
+    """依赖注入：获取分类或返回 404"""
+    category = db.get(Category, category_id)
+    if not category:
+        raise NotFoundError("category_not_found", CATEGORY_NOT_FOUND)
+    return category
+
+
+def get_tag_or_404(tag_id: int, db: Session = Depends(get_db)) -> Tag:
+    """依赖注入：获取标签或返回 404"""
+    tag = db.get(Tag, tag_id)
+    if not tag:
+        raise NotFoundError("tag_not_found", TAG_NOT_FOUND)
+    return tag

@@ -130,12 +130,15 @@ async def check_initialized_middleware(request: Request, call_next):
     ):
         return await call_next(request)
 
-    # 先检查内存缓存，命中则跳过 DB session 创建
+    # 先检查内存缓存，命中则跳过数据库查询（绝大多数请求走此分支）
     from app.services.setup_service import is_cache_initialized
 
     if is_cache_initialized():
         return await call_next(request)
 
+    # 缓存未命中时创建独立 Session 查询初始化状态
+    # 此 Session 与路由层 get_db 的 Session 独立，但仅在首次请求时触发一次，
+    # 查询完成后缓存即命中，后续请求不再进入此分支，性能影响可忽略
     with SessionLocal() as db:
         initialized = is_initialized(db)
 

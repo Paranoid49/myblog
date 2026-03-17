@@ -1,6 +1,5 @@
 """RSS Feed 生成模块。"""
 
-import threading
 import time
 from xml.sax.saxutils import escape
 
@@ -16,20 +15,17 @@ router = APIRouter(tags=["feed"])
 
 # RSS 内存缓存：按 base_url 分别缓存，避免不同域名访问时 URL 不一致
 _feed_cache: dict = {}
-_feed_lock = threading.Lock()
 
 
 @router.get("/feed.xml", include_in_schema=False)
 def rss_feed(request: Request, db: Session = Depends(get_db)) -> Response:
-    """生成 RSS 2.0 Feed（5 分钟缓存，线程安全，按 base_url 区分）"""
+    """生成 RSS 2.0 Feed（5 分钟内存缓存，按 base_url 区分）"""
     base_url = str(request.base_url).rstrip("/")
-    now = time.time()
-    with _feed_lock:
-        cached = _feed_cache.get(base_url)
-        if cached and now < cached["expires"]:
-            return Response(content=cached["xml"], media_type="application/rss+xml")
+    cached = _feed_cache.get(base_url)
+    if cached and time.time() < cached["expires"]:
+        return Response(content=cached["xml"], media_type="application/rss+xml")
 
-    # 生成 XML（在锁外执行，避免阻塞其他请求）
+    # 缓存过期或不存在，重新生成 XML
     posts, _ = list_published_posts(db)
     site = get_site_settings(db)
     blog_title = site.blog_title if site else "myblog"
@@ -53,7 +49,6 @@ def rss_feed(request: Request, db: Session = Depends(get_db)) -> Response:
     </channel>
 </rss>"""
 
-    with _feed_lock:
-        _feed_cache[base_url] = {"xml": xml, "expires": time.time() + 300}
+    _feed_cache[base_url] = {"xml": xml, "expires": time.time() + 300}
 
     return Response(content=xml, media_type="application/rss+xml")

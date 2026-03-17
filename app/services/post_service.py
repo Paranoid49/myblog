@@ -1,7 +1,9 @@
+import time as _time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from sqlalchemy import Select, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.hook_bus import hook_bus
@@ -137,7 +139,11 @@ def list_published_posts(db: Session, page: int = 1, page_size: int = 20) -> tup
     """分页查询已发布文章"""
     page = max(1, page)
     page_size = max(1, min(page_size, 100))
-    base = select(Post).options(selectinload(Post.category), selectinload(Post.tags)).where(Post.published_at.is_not(None))
+    base = (
+        select(Post)
+        .options(selectinload(Post.category), selectinload(Post.tags))
+        .where(Post.published_at.is_not(None))
+    )
     total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
     posts = list(
         db.execute(base.order_by(Post.published_at.desc()).offset((page - 1) * page_size).limit(page_size))
@@ -170,8 +176,15 @@ def get_post_or_raise(db: Session, post_id: int) -> Post:
 def save_new_post(db: Session, data: PostCreatePayload, tags: list[Tag]) -> Post:
     """创建新文章并持久化，触发 post.created 事件。"""
     post = create_post(db, data, tags)
-    db.add(post)
-    db.commit()
+    try:
+        db.add(post)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        # slug 唯一约束冲突，用时间戳后缀重新生成
+        post.slug = f"{post.slug}-{int(_time.time()) % 10000}"
+        db.add(post)
+        db.commit()
     db.refresh(post)
     hook_bus.emit("post.created", {"post_id": post.id, "slug": post.slug})
     return post

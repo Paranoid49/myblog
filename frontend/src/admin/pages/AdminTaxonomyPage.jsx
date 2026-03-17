@@ -81,7 +81,7 @@ export default function AdminTaxonomyPage() {
       : `/admin/tags/${editing.id}`;
     try {
       await apiRequest(endpoint, {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: editing.name }),
       });
@@ -99,10 +99,10 @@ export default function AdminTaxonomyPage() {
     setError('');
     setMessage('');
     const endpoint = type === 'category'
-      ? `/admin/categories/${id}/delete`
-      : `/admin/tags/${id}/delete`;
+      ? `/admin/categories/${id}`
+      : `/admin/tags/${id}`;
     try {
-      await apiRequest(endpoint, { method: 'POST' });
+      await apiRequest(endpoint, { method: 'DELETE' });
       setMessage(type === 'category' ? '分类已删除' : '标签已删除');
       await loadTaxonomy();
     } catch (e) {

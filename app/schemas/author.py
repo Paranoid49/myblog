@@ -1,4 +1,10 @@
+import re
+
 from pydantic import BaseModel, field_validator
+
+from app.schemas.validators import not_blank
+
+_EMAIL_RE = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 
 class AuthorProfileUpdateRequest(BaseModel):
@@ -13,9 +19,7 @@ class AuthorProfileUpdateRequest(BaseModel):
     @field_validator("name")
     @classmethod
     def _name_not_blank(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("must_not_be_blank")
-        return value.strip()
+        return not_blank(value)
 
     @field_validator("bio", "email", "avatar", "link")
     @classmethod
@@ -26,7 +30,7 @@ class AuthorProfileUpdateRequest(BaseModel):
     @classmethod
     def _validate_email(cls, value: str) -> str:
         v = value.strip()
-        if v and "@" not in v:
+        if v and not _EMAIL_RE.match(v):
             raise ValueError("invalid_email_format")
         return v
 

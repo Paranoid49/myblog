@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from sqlalchemy import func, select
+from sqlalchemy import update as sa_update
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Category, Tag
@@ -103,9 +104,11 @@ def delete_category(db: Session, category: Category) -> None:
     from app.services.post_service import resolve_category_id
 
     default_id = resolve_category_id(db, None)
-    # 将该分类下的文章迁移到默认分类
-    for post in category.posts:
-        post.category_id = default_id
+    # 批量更新：将该分类下的文章迁移到默认分类
+    from app.models.post import Post
+    db.execute(
+        sa_update(Post).where(Post.category_id == category.id).values(category_id=default_id)
+    )
     db.delete(category)
     db.commit()
 

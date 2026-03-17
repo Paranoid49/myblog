@@ -1,5 +1,7 @@
 from pydantic import BaseModel, field_validator
 
+from app.schemas.validators import not_blank
+
 
 class SetupStatusResponse(BaseModel):
     """初始化状态响应体"""
@@ -19,9 +21,7 @@ class SetupRequest(BaseModel):
     @field_validator("blog_title", "username", "password")
     @classmethod
     def _not_blank(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("must_not_be_blank")
-        return value
+        return not_blank(value)
 
     @field_validator("password")
     @classmethod

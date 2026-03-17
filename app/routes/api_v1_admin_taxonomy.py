@@ -3,9 +3,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import get_current_admin, require_csrf_header
-from app.core.error_codes import CATEGORY_EXISTS, CATEGORY_NOT_FOUND, TAG_EXISTS, TAG_NOT_FOUND
-from app.core.exceptions import ConflictError, NotFoundError
+from app.core.deps import get_category_or_404, get_current_admin, get_tag_or_404, require_csrf_header
+from app.core.error_codes import CATEGORY_EXISTS, TAG_EXISTS
+from app.core.exceptions import ConflictError
 from app.models import Category, Tag, User
 from app.schemas.api_response import ApiResponse, ok_response
 from app.schemas.serializers import serialize_category, serialize_tag
@@ -67,17 +67,14 @@ def create_tag_api(
     return ok_response(serialize_tag(tag), status_code=status.HTTP_201_CREATED)
 
 
-@router.post("/admin/categories/{category_id}", response_model=ApiResponse, summary="更新分类")
+@router.put("/admin/categories/{category_id}", response_model=ApiResponse, summary="更新分类")
 def update_category_api(
-    category_id: int,
     payload: NameCreateRequest,
+    category: Category = Depends(get_category_or_404),
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
     _csrf: None = Depends(require_csrf_header),
 ) -> JSONResponse:
-    category = db.get(Category, category_id)
-    if not category:
-        raise NotFoundError("category_not_found", CATEGORY_NOT_FOUND)
     normalized_name = payload.name.strip()
     if category_exists_by_name(db, normalized_name):
         raise ConflictError("category_exists", CATEGORY_EXISTS)
@@ -85,31 +82,25 @@ def update_category_api(
     return ok_response(serialize_category(category))
 
 
-@router.post("/admin/categories/{category_id}/delete", response_model=ApiResponse, summary="删除分类")
+@router.delete("/admin/categories/{category_id}", response_model=ApiResponse, summary="删除分类")
 def delete_category_api(
-    category_id: int,
+    category: Category = Depends(get_category_or_404),
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
     _csrf: None = Depends(require_csrf_header),
 ) -> JSONResponse:
-    category = db.get(Category, category_id)
-    if not category:
-        raise NotFoundError("category_not_found", CATEGORY_NOT_FOUND)
     delete_category(db, category)
     return ok_response(None)
 
 
-@router.post("/admin/tags/{tag_id}", response_model=ApiResponse, summary="更新标签")
+@router.put("/admin/tags/{tag_id}", response_model=ApiResponse, summary="更新标签")
 def update_tag_api(
-    tag_id: int,
     payload: NameCreateRequest,
+    tag: Tag = Depends(get_tag_or_404),
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
     _csrf: None = Depends(require_csrf_header),
 ) -> JSONResponse:
-    tag = db.get(Tag, tag_id)
-    if not tag:
-        raise NotFoundError("tag_not_found", TAG_NOT_FOUND)
     normalized_name = payload.name.strip()
     if tag_exists_by_name(db, normalized_name):
         raise ConflictError("tag_exists", TAG_EXISTS)
@@ -117,15 +108,12 @@ def update_tag_api(
     return ok_response(serialize_tag(tag))
 
 
-@router.post("/admin/tags/{tag_id}/delete", response_model=ApiResponse, summary="删除标签")
+@router.delete("/admin/tags/{tag_id}", response_model=ApiResponse, summary="删除标签")
 def delete_tag_api(
-    tag_id: int,
+    tag: Tag = Depends(get_tag_or_404),
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
     _csrf: None = Depends(require_csrf_header),
 ) -> JSONResponse:
-    tag = db.get(Tag, tag_id)
-    if not tag:
-        raise NotFoundError("tag_not_found", TAG_NOT_FOUND)
     delete_tag(db, tag)
     return ok_response(None)

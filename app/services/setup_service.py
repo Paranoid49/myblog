@@ -64,6 +64,11 @@ def initialize_site(db: Session, blog_title: str, username: str, password: str) 
     if is_initialized(db):
         raise SetupAlreadyInitializedError()
 
+    # 防御性检查：确保 SiteSettings 表中没有已有记录
+    existing = db.execute(select(SiteSettings).limit(1)).scalar_one_or_none()
+    if existing:
+        raise SetupAlreadyInitializedError()
+
     site_settings = SiteSettings(blog_title=blog_title)
     user = build_admin_user(username, password)
     db.add(site_settings)
