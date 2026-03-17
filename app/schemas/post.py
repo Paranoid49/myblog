@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field, field_validator
 class AdminPostWriteRequest(BaseModel):
     """后台文章创建/更新统一请求体"""
 
-    title: str
-    summary: str | None = None
+    title: str = Field(..., max_length=200)
+    summary: str | None = Field(default=None, max_length=500)
     content: str
     category_id: int | None = None
     tag_ids: list[int] = Field(default_factory=list)

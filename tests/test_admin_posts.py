@@ -1,21 +1,4 @@
 from app.models import Category, Post
-from app.services.post_service import PostCreatePayload, build_post
-
-
-def test_build_post_generates_slug() -> None:
-    data = PostCreatePayload(
-        title="My First Post",
-        summary="Intro",
-        content="Hello",
-        category_id=1,
-        tag_ids=[],
-    )
-
-    post = build_post(data, existing_slugs=set())
-
-    assert post.slug == "my-first-post"
-    assert post.title == "My First Post"
-    assert post.category_id == 1
 
 
 def test_admin_routes_are_served_by_frontend_spa(client, initialized_site, admin_user) -> None:

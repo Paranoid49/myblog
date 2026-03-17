@@ -1,10 +1,10 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class NameCreateRequest(BaseModel):
     """分类/标签创建请求体"""
 
-    name: str
+    name: str = Field(..., max_length=100)
 
     @field_validator("name")
     @classmethod

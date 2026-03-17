@@ -25,7 +25,7 @@ from app.services.taxonomy_service import (
 router = APIRouter(prefix="/api/v1", tags=["api-v1-admin-taxonomy"])
 
 
-@router.get("/taxonomy", response_model=ApiResponse)
+@router.get("/taxonomy", response_model=ApiResponse, summary="获取分类标签列表")
 def list_taxonomy_api(current_admin: User = Depends(get_current_admin), db: Session = Depends(get_db)) -> JSONResponse:
     """获取全部分类和标签列表（个人博客场景数量有限，不分页）"""
     categories, tags = list_taxonomy(db)
@@ -37,7 +37,7 @@ def list_taxonomy_api(current_admin: User = Depends(get_current_admin), db: Sess
     )
 
 
-@router.post("/admin/categories", response_model=ApiResponse)
+@router.post("/admin/categories", response_model=ApiResponse, summary="创建分类")
 def create_category_api(
     payload: NameCreateRequest,
     current_admin: User = Depends(get_current_admin),
@@ -52,7 +52,7 @@ def create_category_api(
     return ok_response(serialize_category(category), status_code=status.HTTP_201_CREATED)
 
 
-@router.post("/admin/tags", response_model=ApiResponse)
+@router.post("/admin/tags", response_model=ApiResponse, summary="创建标签")
 def create_tag_api(
     payload: NameCreateRequest,
     current_admin: User = Depends(get_current_admin),
@@ -67,7 +67,7 @@ def create_tag_api(
     return ok_response(serialize_tag(tag), status_code=status.HTTP_201_CREATED)
 
 
-@router.post("/admin/categories/{category_id}", response_model=ApiResponse)
+@router.post("/admin/categories/{category_id}", response_model=ApiResponse, summary="更新分类")
 def update_category_api(
     category_id: int,
     payload: NameCreateRequest,
@@ -85,7 +85,7 @@ def update_category_api(
     return ok_response(serialize_category(category))
 
 
-@router.post("/admin/categories/{category_id}/delete", response_model=ApiResponse)
+@router.post("/admin/categories/{category_id}/delete", response_model=ApiResponse, summary="删除分类")
 def delete_category_api(
     category_id: int,
     current_admin: User = Depends(get_current_admin),
@@ -99,7 +99,7 @@ def delete_category_api(
     return ok_response(None)
 
 
-@router.post("/admin/tags/{tag_id}", response_model=ApiResponse)
+@router.post("/admin/tags/{tag_id}", response_model=ApiResponse, summary="更新标签")
 def update_tag_api(
     tag_id: int,
     payload: NameCreateRequest,
@@ -117,7 +117,7 @@ def update_tag_api(
     return ok_response(serialize_tag(tag))
 
 
-@router.post("/admin/tags/{tag_id}/delete", response_model=ApiResponse)
+@router.post("/admin/tags/{tag_id}/delete", response_model=ApiResponse, summary="删除标签")
 def delete_tag_api(
     tag_id: int,
     current_admin: User = Depends(get_current_admin),

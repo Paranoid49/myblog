@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import get_current_admin, get_post_or_404, require_csrf_header
+from app.core.deps import get_current_admin, require_csrf_header
+from app.core.error_codes import POST_NOT_FOUND
+from app.core.exceptions import NotFoundError
 from app.models import Post, User
 from app.schemas.api_response import ApiResponse, ok_response
 from app.schemas.pagination import build_paginated_data
@@ -13,9 +15,11 @@ from app.schemas.post import AdminPostWriteRequest, ImportMarkdownRequest
 from app.schemas.serializers import serialize_post
 from app.services.markdown_service import build_markdown_export
 from app.services.post_service import (
+    PostNotFoundError,
     build_post_create_payload,
     build_post_from_import_markdown,
     delete_post,
+    get_post_or_raise,
     list_admin_posts,
     save_new_post,
     save_post_update,
@@ -25,6 +29,15 @@ from app.services.post_service import (
 
 router = APIRouter(prefix="/api/v1", tags=["api-v1-admin-posts"])
 
+
+def get_post_or_404(post_id: int, db: Session = Depends(get_db)) -> Post:
+    """获取文章或抛出 404，用于路由依赖注入"""
+    try:
+        return get_post_or_raise(db, post_id)
+    except PostNotFoundError:
+        raise NotFoundError("post_not_found", POST_NOT_FOUND) from None
+
+
 # 后台文章管理接口
 
 
@@ -32,8 +45,8 @@ router = APIRouter(prefix="/api/v1", tags=["api-v1-admin-posts"])
 def list_admin_posts_api(
     category_id: int | None = None,
     tag_id: int | None = None,
-    page: int = 1,
-    page_size: int = 20,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> JSONResponse:

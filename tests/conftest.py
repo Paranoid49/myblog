@@ -64,8 +64,7 @@ def db_session(setup_database: None) -> Generator[Session, None, None]:
     """每个测试前清空所有表数据（保留表结构），比 drop_all/create_all 更快"""
     clear_initialized_cache()
     # 清除 RSS feed 缓存，避免测试间互相干扰
-    _feed_cache["xml"] = None
-    _feed_cache["expires"] = 0
+    _feed_cache.clear()
     session = TestingSessionLocal()
     try:
         # 按外键依赖顺序清空数据，避免 drop_all/create_all 的开销
@@ -144,20 +143,18 @@ def seeded_tags(db_session: Session) -> list[Tag]:
 
 
 @pytest.fixture()
-def seeded_post(db_session: Session) -> Post:
-    category = Category(name="Python", slug="python")
-    tag = Tag(name="FastAPI", slug="fastapi")
+def seeded_post(db_session: Session, seeded_category: Category, seeded_tags: list[Tag]) -> Post:
     post = Post(
         title="My First Post",
         slug="my-first-post",
         summary="Intro",
         content="Hello World",
-        category=category,
+        category=seeded_category,
         published_at=None,
     )
-    post.tags.append(tag)
-
-    db_session.add_all([category, tag, post])
+    for tag in seeded_tags:
+        post.tags.append(tag)
+    db_session.add(post)
     db_session.commit()
     db_session.refresh(post)
     return post

@@ -24,7 +24,11 @@ export function setStoredUserSnapshot(user) {
     return;
   }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+  } catch (_) {
+    // Safari 隐私模式等场景下忽略
+  }
 }
 
 export function clearStoredUserSnapshot() {
@@ -32,7 +36,11 @@ export function clearStoredUserSnapshot() {
     return;
   }
 
-  window.localStorage.removeItem(STORAGE_KEY);
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch (_) {
+    // Safari 隐私模式等场景下忽略
+  }
 }
 
 export function hasStoredUserSnapshot() {

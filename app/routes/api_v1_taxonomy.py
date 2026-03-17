@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -16,9 +16,12 @@ from app.services.taxonomy_service import (
 router = APIRouter(prefix="/api/v1", tags=["api-v1-taxonomy"])
 
 
-@router.get("/categories/{slug}", response_model=ApiResponse)
+@router.get("/categories/{slug}", response_model=ApiResponse, summary="获取分类下文章列表")
 def get_category_posts_api(
-    slug: str, page: int = 1, page_size: int = 20, db: Session = Depends(get_db)
+    slug: str,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
 ) -> JSONResponse:
     category, posts, total = get_published_posts_by_category(db, slug, page, page_size)
     if not category:
@@ -31,8 +34,8 @@ def get_category_posts_api(
     )
 
 
-@router.get("/tags/{slug}", response_model=ApiResponse)
-def get_tag_posts_api(slug: str, page: int = 1, page_size: int = 20, db: Session = Depends(get_db)) -> JSONResponse:
+@router.get("/tags/{slug}", response_model=ApiResponse, summary="获取标签下文章列表")
+def get_tag_posts_api(slug: str, page: int = Query(default=1, ge=1), page_size: int = Query(default=20, ge=1, le=100), db: Session = Depends(get_db)) -> JSONResponse:
     tag, posts, total = get_published_posts_by_tag(db, slug, page, page_size)
     if not tag:
         raise NotFoundError("tag_not_found", TAG_NOT_FOUND)

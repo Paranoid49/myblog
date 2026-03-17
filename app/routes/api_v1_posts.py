@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -18,7 +18,11 @@ router = APIRouter(prefix="/api/v1", tags=["api-v1-posts"])
 
 
 @router.get("/posts", response_model=ApiResponse, summary="获取已发布文章列表")
-def list_posts_api(page: int = 1, page_size: int = 20, db: Session = Depends(get_db)) -> JSONResponse:
+def list_posts_api(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     posts, total = list_published_posts(db, page, page_size)
     return ok_response(build_paginated_data([serialize_post(post) for post in posts], total, page, page_size))
 

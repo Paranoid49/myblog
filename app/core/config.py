@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     extension_modules: str = ""
     # 数据库连接池大小（仅对 PostgreSQL 生效，SQLite 忽略）
-    db_pool_size: int = 5
+    db_pool_size: int = Field(default=5, ge=1, le=50)
 
     @field_validator("database_url")
     @classmethod
@@ -26,6 +26,15 @@ class Settings(BaseSettings):
         if not v.startswith(supported):
             raise ValueError(f"不支持的数据库 URL 格式: {v}")
         return v
+
+    @field_validator("environment")
+    @classmethod
+    def validate_environment(cls, v: str) -> str:
+        """环境配置标准化：统一转小写，只允许 development / production"""
+        normalized = v.strip().lower()
+        if normalized not in ("development", "production"):
+            raise ValueError(f"environment 只允许 development 或 production，收到: {v}")
+        return normalized
 
     @field_validator("secret_key")
     @classmethod

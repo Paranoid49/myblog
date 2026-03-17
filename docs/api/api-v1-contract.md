@@ -304,6 +304,7 @@
 
 ```json
 {
+  "blog_title": "我的博客",
   "name": "admin",
   "bio": "这是作者简介",
   "email": "admin@example.com",
@@ -322,7 +323,10 @@
   "summary": "摘要",
   "content": "正文",
   "category_id": 1,
+  "category_name": "Python",
+  "category_slug": "python",
   "tag_ids": [1, 2],
+  "tags": [{"id": 1, "name": "FastAPI", "slug": "fastapi"}],
   "published_at": "2026-03-09T10:00:00+00:00"
 }
 ```

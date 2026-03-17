@@ -91,9 +91,13 @@ app.include_router(feed_router)
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
+    """统一 HTTPException 响应格式"""
     if isinstance(exc.detail, dict):
         return JSONResponse(status_code=exc.status_code, content=exc.detail)
-    raise exc
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=build_error_detail(str(exc.detail), exc.status_code),
+    )
 
 
 @app.exception_handler(AppError)
@@ -112,6 +116,9 @@ SKIP_INIT_CHECK_PATHS = {
 }
 
 
+# --- 中间件注册 ---
+# ASGI 洋葱模型：后注册的中间件先执行请求方向处理
+# 实际请求执行顺序：request_size_limit → spa_fallback → security_headers → check_initialized
 @app.middleware("http")
 async def check_initialized_middleware(request: Request, call_next):
     path = request.url.path
@@ -124,9 +131,9 @@ async def check_initialized_middleware(request: Request, call_next):
         return await call_next(request)
 
     # 先检查内存缓存，命中则跳过 DB session 创建
-    from app.services.setup_service import _initialized_cache
+    from app.services.setup_service import is_cache_initialized
 
-    if _initialized_cache is True:
+    if is_cache_initialized():
         return await call_next(request)
 
     with SessionLocal() as db:
@@ -184,11 +191,15 @@ async def request_size_limit_middleware(request: Request, call_next):
     """限制非上传接口的请求体大小（1MB），防止恶意大请求"""
     if not request.url.path.startswith("/api/v1/admin/media"):
         content_length = request.headers.get("content-length")
-        if content_length and int(content_length) > 1_048_576:
-            return JSONResponse(
-                status_code=413,
-                content=build_error_detail("request_too_large", REQUEST_TOO_LARGE),
-            )
+        if content_length:
+            try:
+                if int(content_length) > 1_048_576:
+                    return JSONResponse(
+                        status_code=413,
+                        content=build_error_detail("request_too_large", REQUEST_TOO_LARGE),
+                    )
+            except (ValueError, TypeError):
+                pass
     return await call_next(request)
 
 

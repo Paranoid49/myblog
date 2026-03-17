@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -14,7 +16,7 @@ class SiteSettings(Base):
     author_email: Mapped[str] = mapped_column(String(200), default="", server_default="")
     author_avatar: Mapped[str] = mapped_column(String(500), default="", server_default="")
     author_link: Mapped[str] = mapped_column(String(500), default="", server_default="")
-    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )

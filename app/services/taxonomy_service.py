@@ -19,18 +19,6 @@ def list_taxonomy(db: Session) -> tuple[list[Category], list[Tag]]:
     return categories, tags
 
 
-def get_category_by_slug(db: Session, slug: str) -> Category | None:
-    """根据 slug 查询分类（含关联文章），不存在返回 None。"""
-    stmt = select(Category).options(selectinload(Category.posts)).where(Category.slug == slug)
-    return db.execute(stmt).scalar_one_or_none()
-
-
-def get_tag_by_slug(db: Session, slug: str) -> Tag | None:
-    """根据 slug 查询标签（含关联文章），不存在返回 None。"""
-    stmt = select(Tag).options(selectinload(Tag.posts)).where(Tag.slug == slug)
-    return db.execute(stmt).scalar_one_or_none()
-
-
 def create_category(db: Session, name: str) -> Category:
     """创建分类并持久化。"""
     category = Category(name=name, slug=slugify(name))
@@ -55,11 +43,14 @@ def get_published_posts_by_category(
     """按分类查询已发布文章（数据库层过滤+分页）"""
     from app.models import Post
 
+    page = max(1, page)
+    page_size = max(1, min(page_size, 100))
+
     category = db.execute(select(Category).where(Category.slug == slug)).scalar_one_or_none()
     if not category:
         return None, [], 0
 
-    base = select(Post).where(
+    base = select(Post).options(selectinload(Post.category), selectinload(Post.tags)).where(
         Post.category_id == category.id,
         Post.published_at.is_not(None),
     )
@@ -78,11 +69,14 @@ def get_published_posts_by_tag(
     """按标签查询已发布文章（数据库层过滤+分页）"""
     from app.models import Post, post_tags
 
+    page = max(1, page)
+    page_size = max(1, min(page_size, 100))
+
     tag = db.execute(select(Tag).where(Tag.slug == slug)).scalar_one_or_none()
     if not tag:
         return None, [], 0
 
-    base = select(Post).where(
+    base = select(Post).options(selectinload(Post.category), selectinload(Post.tags)).where(
         Post.published_at.is_not(None),
         Post.id.in_(select(post_tags.c.post_id).where(post_tags.c.tag_id == tag.id)),
     )

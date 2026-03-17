@@ -9,7 +9,6 @@ from app.services.markdown_service import build_markdown_export, extract_markdow
 from app.services.post_service import (
     PostCreatePayload,
     _build_admin_post_list_query,
-    build_post,
     build_post_from_import_markdown,
     create_post,
     get_post_by_slug,
@@ -48,20 +47,6 @@ def test_ensure_unique_slug_adds_suffix() -> None:
 def test_ensure_unique_slug_handles_chinese_generated_slug() -> None:
     base_slug = slugify("我的博客")
     assert ensure_unique_slug(base_slug, {"wo-de-bo-ke", "wo-de-bo-ke-2"}) == "wo-de-bo-ke-3"
-
-
-def test_build_post_applies_unique_slug_when_title_conflicts() -> None:
-    data = PostCreatePayload(
-        title="My First Post",
-        summary="Intro",
-        content="Hello",
-        category_id=1,
-        tag_ids=[],
-    )
-
-    post = build_post(data, existing_slugs={"my-first-post", "my-first-post-2"})
-
-    assert post.slug == "my-first-post-3"
 
 
 def test_extract_markdown_title_prefers_h1() -> None:

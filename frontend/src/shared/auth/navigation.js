@@ -1,10 +1,1 @@
-export function getAuthGuardRedirect(locationPathname, hasUserSnapshot) {
-  if (hasUserSnapshot) {
-    return null;
-  }
-
-  return {
-    to: '/admin/login',
-    state: locationPathname ? { from: locationPathname } : undefined,
-  };
-}
+// 已废弃：getAuthGuardRedirect 不再被 AuthGuard 使用，重定向逻辑已内联到 AuthGuard.jsx

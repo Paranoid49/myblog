@@ -50,7 +50,7 @@ IMAGE_RULES = {
 }
 
 
-@router.post("/admin/media/images", response_model=ApiResponse)
+@router.post("/admin/media/images", response_model=ApiResponse, summary="上传图片")
 async def upload_image_api(
     file: UploadFile = File(...),
     current_admin: User = Depends(get_current_admin),

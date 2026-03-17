@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getAuthGuardRedirect } from './navigation.js';
 import {
   clearStoredUserSnapshot,
   getAdminEntryPath,
@@ -48,19 +47,6 @@ function installWindowMock(pathname = '/') {
 
   return { storage, location };
 }
-
-test('未登录访问后台路由时生成登录跳转信息', () => {
-  const redirect = getAuthGuardRedirect('/admin/posts', false);
-
-  assert.deepEqual(redirect, {
-    to: '/admin/login',
-    state: { from: '/admin/posts' },
-  });
-});
-
-test('已登录访问后台路由时不再跳转登录页', () => {
-  assert.equal(getAuthGuardRedirect('/admin/posts', true), null);
-});
 
 test('登录后按 redirectTo 回跳并写入快照', () => {
   installWindowMock('/admin/login');

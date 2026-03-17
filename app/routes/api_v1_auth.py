@@ -18,6 +18,17 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/auth", tags=["api-v1-auth"])
 
 
+def _get_client_ip(request: Request) -> str:
+    """获取真实客户端 IP，支持反向代理"""
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip.strip()
+    return request.client.host if request.client else "unknown"
+
+
 @router.post("/login", response_model=ApiResponse, summary="管理员登录")
 def api_login(
     request: Request,
@@ -30,7 +41,7 @@ def api_login(
         raise ConflictError("site_not_initialized", SITE_NOT_INITIALIZED)
 
     # 速率限制检查
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = _get_client_ip(request)
     if login_limiter.is_blocked(client_ip):
         logger.warning("登录速率限制触发: IP=%s", client_ip)
         raise TooManyRequestsError("too_many_attempts", TOO_MANY_ATTEMPTS)

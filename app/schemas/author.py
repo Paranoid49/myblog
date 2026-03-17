@@ -21,3 +21,19 @@ class AuthorProfileUpdateRequest(BaseModel):
     @classmethod
     def _trim_text(cls, value: str) -> str:
         return value.strip()
+
+    @field_validator("email")
+    @classmethod
+    def _validate_email(cls, value: str) -> str:
+        v = value.strip()
+        if v and "@" not in v:
+            raise ValueError("invalid_email_format")
+        return v
+
+    @field_validator("link", "avatar")
+    @classmethod
+    def _validate_url(cls, value: str) -> str:
+        v = value.strip()
+        if v and not v.startswith(("http://", "https://", "/")):
+            raise ValueError("invalid_url_format")
+        return v

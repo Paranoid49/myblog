@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react'; // Suspense 仅在 Lazy 组件内部使用
 import { Route, Routes } from 'react-router-dom';
 import AuthGuard from './shared/auth/AuthGuard';
 import { PostListSkeleton } from './shared/components/Skeleton';
@@ -36,30 +36,28 @@ function Lazy({ Component, ...props }) {
 
 export default function App() {
     return (
-        <Suspense fallback={<PageFallback />}>
-            <Routes>
-                <Route path="/setup" element={<Lazy Component={SetupPage} />} />
-                <Route path="/" element={<Lazy Component={PublicHomePage} />} />
-                <Route path="/posts/:slug" element={<Lazy Component={PublicPostDetailPage} />} />
-                <Route path="/categories/:slug" element={<Lazy Component={PublicCategoryPage} />} />
-                <Route path="/categories" element={<Lazy Component={PublicTaxonomyListPage} />} />
-                <Route path="/tags/:slug" element={<Lazy Component={PublicTagPage} />} />
-                <Route path="/author" element={<Lazy Component={PublicAuthorPage} />} />
-                <Route path="/admin/login" element={<Lazy Component={LoginPage} />} />
-                <Route path="/admin" element={
-                    <AuthGuard><Lazy Component={AdminHomePage} /></AuthGuard>
-                } />
-                <Route path="/admin/posts" element={
-                    <AuthGuard><Lazy Component={AdminPostsPage} /></AuthGuard>
-                } />
-                <Route path="/admin/taxonomy" element={
-                    <AuthGuard><Lazy Component={AdminTaxonomyPage} /></AuthGuard>
-                } />
-                <Route path="/admin/author" element={
-                    <AuthGuard><Lazy Component={AdminAuthorPage} /></AuthGuard>
-                } />
-                <Route path="*" element={<Lazy Component={NotFoundPage} />} />
-            </Routes>
-        </Suspense>
+        <Routes>
+            <Route path="/setup" element={<Lazy Component={SetupPage} />} />
+            <Route path="/" element={<Lazy Component={PublicHomePage} />} />
+            <Route path="/posts/:slug" element={<Lazy Component={PublicPostDetailPage} />} />
+            <Route path="/categories/:slug" element={<Lazy Component={PublicCategoryPage} />} />
+            <Route path="/categories" element={<Lazy Component={PublicTaxonomyListPage} />} />
+            <Route path="/tags/:slug" element={<Lazy Component={PublicTagPage} />} />
+            <Route path="/author" element={<Lazy Component={PublicAuthorPage} />} />
+            <Route path="/admin/login" element={<Lazy Component={LoginPage} />} />
+            <Route path="/admin" element={
+                <AuthGuard><Lazy Component={AdminHomePage} /></AuthGuard>
+            } />
+            <Route path="/admin/posts" element={
+                <AuthGuard><Lazy Component={AdminPostsPage} /></AuthGuard>
+            } />
+            <Route path="/admin/taxonomy" element={
+                <AuthGuard><Lazy Component={AdminTaxonomyPage} /></AuthGuard>
+            } />
+            <Route path="/admin/author" element={
+                <AuthGuard><Lazy Component={AdminAuthorPage} /></AuthGuard>
+            } />
+            <Route path="*" element={<Lazy Component={NotFoundPage} />} />
+        </Routes>
     );
 }

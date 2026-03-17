@@ -25,6 +25,14 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        '/feed.xml': {
+          target: apiTarget,
+          changeOrigin: true,
+        },
+        '/health': {
+          target: apiTarget,
+          changeOrigin: true,
+        },
       },
     },
     build: {

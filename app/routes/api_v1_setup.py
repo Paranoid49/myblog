@@ -45,7 +45,7 @@ def _should_bootstrap_database() -> bool:
     return make_url(settings.database_url).drivername.startswith("postgresql")
 
 
-@router.get("/status", response_model=ApiResponse)
+@router.get("/status", response_model=ApiResponse, summary="获取初始化状态")
 def get_setup_status() -> JSONResponse:
     db_exists = database_exists()
 
@@ -58,7 +58,7 @@ def get_setup_status() -> JSONResponse:
     return ok_response({"initialized": initialized, "database_exists": db_exists})
 
 
-@router.post("")
+@router.post("", summary="执行站点初始化")
 def perform_setup(request: Request, data: SetupRequest, _csrf: None = Depends(require_csrf_header)) -> JSONResponse:
     if data.password != data.confirm_password:
         raise AppError("password_mismatch", SETUP_PASSWORD_MISMATCH, 400)

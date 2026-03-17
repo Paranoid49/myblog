@@ -39,6 +39,11 @@ def is_initialized(db: Session) -> bool:
     return result
 
 
+def is_cache_initialized() -> bool:
+    """检查初始化状态缓存是否命中（不查数据库）"""
+    return _initialized_cache is True
+
+
 def clear_initialized_cache() -> None:
     """清除初始化状态缓存（用于测试或数据库重置）"""
     global _initialized_cache

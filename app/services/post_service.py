@@ -2,14 +2,14 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from sqlalchemy import Select, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.hook_bus import hook_bus
 from app.models import Category, Post, Tag
 from app.schemas.post import ImportMarkdownRequest
 from app.services.markdown_service import extract_markdown_title
 from app.services.taxonomy_service import get_tags_by_ids
-from app.utils.text import ensure_unique_slug, slugify
+from app.utils.text import slugify
 
 
 @dataclass
@@ -40,21 +40,9 @@ def resolve_category_id(db: Session, category_id: int | None) -> int:
     return default_category.id
 
 
-def build_post(data: PostCreatePayload, existing_slugs: set[str]) -> Post:
-    """根据 PostCreatePayload 构建 Post 实例，自动生成唯一 slug。"""
-    slug = ensure_unique_slug(slugify(data.title), existing_slugs)
-    return Post(
-        title=data.title,
-        slug=slug,
-        summary=data.summary,
-        content=data.content,
-        category_id=data.category_id,
-    )
-
-
 def _build_admin_post_list_query(category_id: int | None = None, tag_id: int | None = None) -> Select:
     """构建后台文章列表查询语句，支持分类和标签筛选。"""
-    stmt = select(Post).order_by(Post.created_at.desc())
+    stmt = select(Post).options(selectinload(Post.category), selectinload(Post.tags)).order_by(Post.created_at.desc())
     if category_id is not None:
         stmt = stmt.where(Post.category_id == category_id)
     if tag_id is not None:
@@ -147,7 +135,9 @@ def unpublish_post(post: Post) -> Post:
 
 def list_published_posts(db: Session, page: int = 1, page_size: int = 20) -> tuple[list[Post], int]:
     """分页查询已发布文章"""
-    base = select(Post).where(Post.published_at.is_not(None))
+    page = max(1, page)
+    page_size = max(1, min(page_size, 100))
+    base = select(Post).options(selectinload(Post.category), selectinload(Post.tags)).where(Post.published_at.is_not(None))
     total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
     posts = list(
         db.execute(base.order_by(Post.published_at.desc()).offset((page - 1) * page_size).limit(page_size))
@@ -158,8 +148,8 @@ def list_published_posts(db: Session, page: int = 1, page_size: int = 20) -> tup
 
 
 def get_post_by_slug(db: Session, slug: str) -> Post | None:
-    """根据 slug 查询文章，不存在返回 None。"""
-    stmt = select(Post).where(Post.slug == slug)
+    """根据 slug 查询文章，不存在返回 None。预加载 category 和 tags 避免 N+1 查询。"""
+    stmt = select(Post).options(selectinload(Post.category), selectinload(Post.tags)).where(Post.slug == slug)
     return db.execute(stmt).scalar_one_or_none()
 
 
@@ -222,6 +212,8 @@ def list_admin_posts(
     page_size: int = 20,
 ) -> tuple[list[Post], int]:
     """后台文章列表查询，支持分类和标签筛选，带分页"""
+    page = max(1, page)
+    page_size = max(1, min(page_size, 100))
     stmt = _build_admin_post_list_query(category_id, tag_id)
     total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar() or 0
     posts = list(db.execute(stmt.offset((page - 1) * page_size).limit(page_size)).scalars().all())
