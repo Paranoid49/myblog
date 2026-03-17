@@ -10,6 +10,8 @@ services:
     environment:
       - ENVIRONMENT=production
       - DATABASE_URL=sqlite:////app/data/myblog.db
+      # SECRET_KEY 必须在 .env 文件中配置，至少 32 字符，否则启动失败
+      # 示例：SECRET_KEY=your-random-secret-key-at-least-32-chars
     logging:
       driver: json-file
       options:

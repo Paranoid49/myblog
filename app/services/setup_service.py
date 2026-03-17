@@ -52,7 +52,8 @@ def clear_initialized_cache() -> None:
 
 def get_site_settings(db: Session) -> SiteSettings | None:
     """获取站点设置，表不存在或无数据时返回 None。"""
-    if not _has_required_tables(db):
+    # 初始化完成后跳过 inspect 检查，直接查询
+    if _initialized_cache is not True and not _has_required_tables(db):
         return None
     return db.execute(select(SiteSettings)).scalar_one_or_none()
 

@@ -298,6 +298,25 @@
 - 缓存：内存缓存 5 分钟
 - 成功：200
 
+## 9.5 初始化接口（Setup）
+
+> 无需登录。初始化完成后，中间件拦截所有 Setup 以外的请求返回 409。
+
+### 9.5.1 GET `/api/v1/setup/status`
+- 说明：查询站点初始化状态和数据库是否存在
+- 成功：200
+- 返回 data：`{ initialized: bool, database_exists: bool }`
+
+### 9.5.2 POST `/api/v1/setup`
+- 说明：执行站点初始化（创建管理员 + 站点设置）
+- 入参（JSON）：
+  - `blog_title: string`（必填，最大 200 字符）
+  - `username: string`（必填，最大 64 字符）
+  - `password: string`（必填，至少 8 字符，含字母+数字）
+  - `confirm_password: string`（必填，须与 password 一致）
+- 成功：200
+- 失败：400（`2001` 密码不一致）、409（`2004` 已初始化）、500（`2002` 数据库创建失败 / `2003` 迁移失败）
+
 ## 10. 数据模型（API 返回最小字段）
 
 ### 10.1 AuthorProfile

@@ -374,3 +374,30 @@ def delete_tag(db: Session, tag: Tag) -> None:
 - 35. ✅ get_post_or_404 迁移到 deps.py — 与 get_category_or_404/get_tag_or_404 统一放置
 - 36. ✅ feed 缓存大小限制 — 最多 10 个条目，超限清除最旧的
 - 37. conftest 增加限流器重置 — 避免测试间累积触发 429
+
+---
+
+### 五轮评审修复 — 深度独立审查发现的问题（8.7 → 9.0+）
+
+> 第五轮由全新外部视角独立审查（75 次文件读取，覆盖全部 47 个源文件），
+> 深入到 inspect 调用开销、冗余异常类、slug 碰撞概率、部署配置提示、
+> API 契约完整性、前端 CI 覆盖率等细节层面。共发现 6 项改进点，已全部实施。
+> 最终结果：188 passed, 0 failed, 覆盖率 94.70%, ruff 0 errors。
+
+#### 性能优化
+
+- 38. ✅ `get_site_settings` 跳过冗余 inspect — 初始化完成后（`_initialized_cache is True`）直接查询 SiteSettings，不再每次调用 `_has_required_tables(db)` 执行 `inspect(db.bind)`
+
+#### 代码清理
+
+- 39. ✅ 删除冗余 `PostNotFoundError` + `get_post_or_raise` — 路由层已统一使用 `deps.py` 中的 `get_post_or_404`（基于 `NotFoundError`），`post_service.py` 中的 `PostNotFoundError` 异常类和 `get_post_or_raise` 函数已无调用方，属冗余代码
+- 40. ✅ slug 冲突 fallback 改用 uuid — `save_new_post` 的 `IntegrityError` 回退从 `time()%10000`（可能碰撞）改为 `uuid4().hex[:8]`（碰撞概率 ~1/40亿）
+
+#### 部署与文档
+
+- 41. ✅ docker-compose 添加 SECRET_KEY 配置提示 — 在 environment 区域增加注释说明必须在 `.env` 中配置 SECRET_KEY
+- 42. ✅ API 契约补充 Setup 接口 — `api-v1-contract.md` 新增 §9.5 初始化接口，包含 `GET /setup/status` 和 `POST /setup` 的完整字段说明、错误码
+
+#### CI 强化
+
+- 43. ✅ 前端 CI 启用覆盖率检查 — `ci.yml` 中 `npm test` 改为 `npm run test:coverage`

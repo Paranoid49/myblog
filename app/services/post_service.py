@@ -1,4 +1,4 @@
-import time as _time
+import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
@@ -159,24 +159,6 @@ def get_post_by_slug(db: Session, slug: str) -> Post | None:
     return db.execute(stmt).scalar_one_or_none()
 
 
-class PostNotFoundError(Exception):
-    """文章不存在时抛出。"""
-
-    pass
-
-
-def get_post_or_raise(db: Session, post_id: int) -> Post:
-    """根据 ID 获取文章，不存在则抛出 PostNotFoundError。预加载 category 和 tags 避免 N+1。"""
-    post = db.execute(
-        select(Post)
-        .options(selectinload(Post.category), selectinload(Post.tags))
-        .where(Post.id == post_id)
-    ).scalar_one_or_none()
-    if not post:
-        raise PostNotFoundError()
-    return post
-
-
 def save_new_post(db: Session, data: PostCreatePayload, tags: list[Tag]) -> Post:
     """创建新文章并持久化，触发 post.created 事件。"""
     post = create_post(db, data, tags)
@@ -186,7 +168,7 @@ def save_new_post(db: Session, data: PostCreatePayload, tags: list[Tag]) -> Post
     except IntegrityError:
         db.rollback()
         # slug 唯一约束冲突，用时间戳后缀重新生成
-        post.slug = f"{post.slug}-{int(_time.time()) % 10000}"
+        post.slug = f"{post.slug}-{uuid.uuid4().hex[:8]}"
         db.add(post)
         db.commit()
     db.refresh(post)
