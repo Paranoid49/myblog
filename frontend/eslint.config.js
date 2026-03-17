@@ -27,6 +27,7 @@ export default [
                 setTimeout: 'readonly',
                 clearTimeout: 'readonly',
                 URL: 'readonly',
+                Blob: 'readonly',
             },
         },
         settings: {
