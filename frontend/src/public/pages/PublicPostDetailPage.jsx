@@ -8,6 +8,11 @@ import { PostDetailSkeleton } from '../../shared/components/Skeleton';
 // 模块级缓存，按 slug 存储已加载的文章
 const postCache = new Map();
 
+// 供测试使用，清除缓存
+export function _clearPostCache() {
+  postCache.clear();
+}
+
 export default function PublicPostDetailPage() {
   const { slug } = useParams();
   const cached = postCache.get(slug);

@@ -11,6 +11,7 @@ import { apiRequest } from '../../../shared/api/client';
 import { ThemeProvider } from '../../../shared/theme/ThemeProvider';
 import { SiteProvider } from '../../../shared/site/SiteProvider';
 import PublicAuthorPage from '../PublicAuthorPage';
+import { _clearAuthorCache } from '../PublicAuthorPage';
 
 // 模拟 localStorage（ThemeProvider 读写 data-theme 需要）
 const localStorageMock = (() => {
@@ -41,6 +42,7 @@ describe('PublicAuthorPage（真实 Provider 渲染）', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         localStorageMock.clear();
+        _clearAuthorCache();
     });
 
     it('加载作者数据后显示作者名', async () => {
@@ -89,8 +91,10 @@ describe('PublicAuthorPage（真实 Provider 渲染）', () => {
 
         renderWithProviders(<PublicAuthorPage />);
 
+        // PublicAuthorPage 不再包含 PublicLayout，博客标题由外层 Layout 渲染
+        // 此处验证作者名正常显示即可
         await waitFor(() => {
-            expect(screen.getByText('我的技术博客')).toBeTruthy();
+            expect(screen.getByText('李四')).toBeTruthy();
         });
     });
 });

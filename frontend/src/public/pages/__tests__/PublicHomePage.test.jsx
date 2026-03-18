@@ -7,11 +7,6 @@ vi.mock('../../../shared/api/client', () => ({
     apiRequest: vi.fn(),
 }));
 
-// mock PublicLayout，避免引入 ThemeProvider 等复杂依赖
-vi.mock('../../../shared/layout/PublicLayout', () => ({
-    default: ({ children }) => <div data-testid="public-layout">{children}</div>,
-}));
-
 // mock formatDate 工具函数
 vi.mock('../../../shared/utils/format', () => ({
     formatDate: vi.fn((v) => v || '未发布'),
@@ -19,10 +14,12 @@ vi.mock('../../../shared/utils/format', () => ({
 
 import { apiRequest } from '../../../shared/api/client';
 import PublicHomePage from '../PublicHomePage';
+import { _clearHomeCache } from '../PublicHomePage';
 
 describe('PublicHomePage', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        _clearHomeCache();
     });
 
     it('加载中显示骨架屏', () => {

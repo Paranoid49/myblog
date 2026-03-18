@@ -5,6 +5,11 @@ import { PageHero } from '../../shared/layout/PublicLayout';
 // 模块级缓存
 let cachedAuthor = null;
 
+// 供测试使用，清除缓存
+export function _clearAuthorCache() {
+  cachedAuthor = null;
+}
+
 function renderAvatar(author) {
   if (author.avatar) {
     return <img src={author.avatar} alt={author.name || '作者头像'} className="author-avatar-image" />;

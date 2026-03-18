@@ -58,14 +58,15 @@ describe('SetupPage', () => {
         expect(passwordInputs.length).toBe(2);
     });
 
-    it('加载中显示检查状态提示', () => {
+    it('加载中不渲染表单内容', () => {
         // 让 apiRequest 永不 resolve，保持 loading 状态
         apiRequest.mockReturnValue(new Promise(() => {}));
-        render(
+        const { container } = render(
             <MemoryRouter>
                 <SetupPage />
             </MemoryRouter>
         );
-        expect(screen.getByText('检查初始化状态...')).toBeTruthy();
+        // loading 态返回 null，不渲染任何内容
+        expect(container.querySelector('.setup-card')).toBeNull();
     });
 });

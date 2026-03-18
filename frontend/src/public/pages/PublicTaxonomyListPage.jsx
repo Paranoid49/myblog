@@ -7,6 +7,11 @@ import { PageHero } from '../../shared/layout/PublicLayout';
 // 模块级缓存，按 "type:slug" 存储
 const taxonomyCache = new Map();
 
+// 供测试使用，清除缓存
+export function _clearTaxonomyCache() {
+  taxonomyCache.clear();
+}
+
 export default function PublicTaxonomyListPage({ type }) {
   const { slug } = useParams();
   const cacheKey = `${type}:${slug}`;

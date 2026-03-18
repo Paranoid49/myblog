@@ -9,6 +9,12 @@ import Pagination from '../../shared/components/Pagination';
 let cachedPage = 1;
 let cachedData = null;
 
+// 供测试使用，清除缓存
+export function _clearHomeCache() {
+  cachedPage = 1;
+  cachedData = null;
+}
+
 export default function PublicHomePage() {
   const [posts, setPosts] = useState(cachedData?.items || []);
   const [error, setError] = useState('');
