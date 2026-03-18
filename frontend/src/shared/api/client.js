@@ -16,6 +16,28 @@ function handleUnauthorized(error) {
   redirectToLoginAfterUnauthorized();
 }
 
+// 可由外部注入的导航函数，用于 SPA 内跳转
+let _navigateToSetup = null;
+
+export function setSetupNavigator(fn) {
+  _navigateToSetup = fn;
+}
+
+// 站点未初始化时自动跳转到 /setup
+function handleNotInitialized(error) {
+  if (error.status !== 409 || error.code !== 1001) {
+    return;
+  }
+
+  if (window.location.pathname !== '/setup') {
+    if (_navigateToSetup) {
+      _navigateToSetup();
+    } else {
+      window.location.replace('/setup');
+    }
+  }
+}
+
 export async function apiRequest(path, options = {}) {
   const { headers: customHeaders, ...restOptions } = options;
   const response = await fetch(`/api/v1${path}`, {
@@ -37,6 +59,7 @@ export async function apiRequest(path, options = {}) {
       message: `http_${response.status}`,
     });
     handleUnauthorized(error);
+    handleNotInitialized(error);
     throw error;
   }
 
@@ -47,6 +70,7 @@ export async function apiRequest(path, options = {}) {
       message: payload?.message || `http_${response.status}`,
     });
     handleUnauthorized(error);
+    handleNotInitialized(error);
     throw error;
   }
 

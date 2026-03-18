@@ -80,7 +80,36 @@ cp .env.example .env
 | `ENVIRONMENT` | 运行环境 `development` / `production` | `development` |
 | `DATABASE_URL` | 数据库连接字符串 | `sqlite:///myblog.db` |
 
-使用 PostgreSQL 时需额外安装：`pip install "myblog[pg]"` 或 `pip install psycopg[binary]`。
+切换 PostgreSQL 只需修改 `DATABASE_URL`，驱动已内置，无需额外安装。
+
+## Docker 部署
+
+### 默认部署（SQLite，零配置）
+
+```bash
+# 准备配置
+cp .env.example .env
+# 编辑 .env，至少设置 SECRET_KEY（>= 32 字符）
+
+# 启动
+docker compose up -d --build
+```
+
+默认使用 SQLite，数据库文件持久化在 `./data/myblog.db`，访问 `http://localhost` 即可使用。
+
+### 使用 PostgreSQL
+
+在 `.env` 中配置 `DATABASE_URL` 即可覆盖默认 SQLite：
+
+```env
+DATABASE_URL=postgresql+psycopg://用户名:密码@数据库地址:5432/数据库名
+```
+
+PostgreSQL 需自行准备，项目镜像已内置驱动。然后正常启动：
+
+```bash
+docker compose up -d --build
+```
 
 ## 项目结构
 

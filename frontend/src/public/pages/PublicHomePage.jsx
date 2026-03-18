@@ -2,32 +2,38 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../../shared/api/client';
 import { formatDate } from '../../shared/utils/format';
-import PublicLayout from '../../shared/layout/PublicLayout';
 import { PostListSkeleton } from '../../shared/components/Skeleton';
 import Pagination from '../../shared/components/Pagination';
 
+// 模块级缓存，组件卸载后数据不丢失
+let cachedPage = 1;
+let cachedData = null;
+
 export default function PublicHomePage() {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState(cachedData?.items || []);
   const [error, setError] = useState('');
-  const [loaded, setLoaded] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalPosts, setTotalPosts] = useState(0);
+  const [loaded, setLoaded] = useState(!!cachedData);
+  const [page, setPage] = useState(cachedPage);
+  const [totalPages, setTotalPages] = useState(cachedData?.total_pages || 1);
 
   useEffect(() => {
+    // 同页有缓存则跳过请求
+    if (cachedData && page === cachedPage) return;
+
     setLoaded(false);
     apiRequest(`/posts?page=${page}&page_size=20`)
       .then((data) => {
         setPosts(data?.items || []);
         setTotalPages(data?.total_pages || 1);
-        setTotalPosts(data?.total || 0);
+        cachedData = data;
+        cachedPage = page;
       })
       .catch((e) => setError(e.message || 'load_failed'))
       .finally(() => setLoaded(true));
   }, [page]);
 
   return (
-    <PublicLayout title="" description="">
+    <>
       {error ? <div className="notice error">{error}</div> : null}
       {!loaded ? (
         <PostListSkeleton />
@@ -60,6 +66,6 @@ export default function PublicHomePage() {
         ))}
       </section>
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-    </PublicLayout>
+    </>
   );
 }

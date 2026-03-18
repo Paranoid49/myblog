@@ -2,24 +2,35 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { apiRequest } from '../../shared/api/client';
 import { formatDate } from '../../shared/utils/format';
-import PublicLayout from '../../shared/layout/PublicLayout';
 import MarkdownRenderer from '../../shared/markdown/MarkdownRenderer';
 import { PostDetailSkeleton } from '../../shared/components/Skeleton';
 
+// 模块级缓存，按 slug 存储已加载的文章
+const postCache = new Map();
+
 export default function PublicPostDetailPage() {
   const { slug } = useParams();
-  const [post, setPost] = useState(null);
+  const cached = postCache.get(slug);
+  const [post, setPost] = useState(cached || null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!slug) return;
+    if (postCache.has(slug)) {
+      setPost(postCache.get(slug));
+      return;
+    }
+    setPost(null);
     apiRequest(`/posts/${encodeURIComponent(slug)}`)
-      .then((data) => setPost(data))
+      .then((data) => {
+        postCache.set(slug, data);
+        setPost(data);
+      })
       .catch((e) => setError(e.message || 'load_failed'));
   }, [slug]);
 
   return (
-    <PublicLayout title="" description="">
+    <>
       {error ? <div className="notice error">{error}</div> : null}
       {!post ? <PostDetailSkeleton /> : null}
 
@@ -52,6 +63,6 @@ export default function PublicPostDetailPage() {
           <MarkdownRenderer content={post.content || ''} />
         </article>
       ) : null}
-    </PublicLayout>
+    </>
   );
 }

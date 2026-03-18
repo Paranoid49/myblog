@@ -42,6 +42,10 @@ markupsafe==3.0.3
     # via mako
 passlib==1.7.4
     # via myblog (pyproject.toml)
+psycopg==3.3.3
+    # via myblog (pyproject.toml)
+psycopg-binary==3.3.3
+    # via psycopg
 pydantic==2.12.5
     # via
     #   fastapi
@@ -71,6 +75,7 @@ typing-extensions==4.15.0
     #   alembic
     #   anyio
     #   fastapi
+    #   psycopg
     #   pydantic
     #   pydantic-core
     #   sqlalchemy
@@ -81,6 +86,8 @@ typing-inspection==0.4.2
     #   fastapi
     #   pydantic
     #   pydantic-settings
+tzdata==2025.3
+    # via psycopg
 uvicorn==0.42.0
     # via myblog (pyproject.toml)
 watchfiles==1.1.1

@@ -1,20 +1,48 @@
 services:
-  myblog:
+  backend:
     build: .
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     volumes:
       - ./data:/app/data
       - ./uploads:/app/app/static/uploads
     env_file: .env
     environment:
       - ENVIRONMENT=production
-      - DATABASE_URL=sqlite:////app/data/myblog.db
+      - DATABASE_URL=${DATABASE_URL:-sqlite:////app/data/myblog.db}
       # SECRET_KEY 必须在 .env 文件中配置，至少 32 字符，否则启动失败
-      # 示例：SECRET_KEY=your-random-secret-key-at-least-32-chars
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
     restart: unless-stopped
+
+  frontend-build:
+    build: ./frontend
+    volumes:
+      - frontend_dist:/output
+    # 构建产物同步到共享卷后自动退出，不需要 restart
+    restart: "no"
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - frontend_dist:/usr/share/nginx/html:ro
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend-build:
+        condition: service_completed_successfully
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+
+volumes:
+  frontend_dist:

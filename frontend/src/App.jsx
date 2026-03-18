@@ -1,6 +1,8 @@
-import { lazy, Suspense } from 'react'; // Suspense 仅在 Lazy 组件内部使用
-import { Route, Routes } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { Route, Routes, useNavigate } from 'react-router-dom';
 import AuthGuard from './shared/auth/AuthGuard';
+import PublicLayout from './shared/layout/PublicLayout';
+import { setSetupNavigator } from './shared/api/client';
 import { PostListSkeleton } from './shared/components/Skeleton';
 
 // 懒加载页面组件
@@ -19,11 +21,7 @@ const PublicTaxonomyListPage = lazy(() => import('./public/pages/PublicTaxonomyL
 const NotFoundPage = lazy(() => import('./public/pages/NotFoundPage'));
 
 function PageFallback() {
-    return (
-        <div className="app-shell public-shell">
-            <PostListSkeleton count={2} />
-        </div>
-    );
+    return <PostListSkeleton count={2} />;
 }
 
 function Lazy({ Component, ...props }) {
@@ -35,15 +33,16 @@ function Lazy({ Component, ...props }) {
 }
 
 export default function App() {
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        setSetupNavigator(() => navigate('/setup', { replace: true }));
+        return () => setSetupNavigator(null);
+    }, [navigate]);
+
     return (
         <Routes>
             <Route path="/setup" element={<Lazy Component={SetupPage} />} />
-            <Route path="/" element={<Lazy Component={PublicHomePage} />} />
-            <Route path="/posts/:slug" element={<Lazy Component={PublicPostDetailPage} />} />
-            <Route path="/categories/:slug" element={<Lazy Component={PublicCategoryPage} />} />
-            <Route path="/categories" element={<Lazy Component={PublicTaxonomyListPage} />} />
-            <Route path="/tags/:slug" element={<Lazy Component={PublicTagPage} />} />
-            <Route path="/author" element={<Lazy Component={PublicAuthorPage} />} />
             <Route path="/admin/login" element={<Lazy Component={LoginPage} />} />
             <Route path="/admin" element={
                 <AuthGuard><Lazy Component={AdminHomePage} /></AuthGuard>
@@ -57,7 +56,15 @@ export default function App() {
             <Route path="/admin/author" element={
                 <AuthGuard><Lazy Component={AdminAuthorPage} /></AuthGuard>
             } />
-            <Route path="*" element={<Lazy Component={NotFoundPage} />} />
+            <Route element={<PublicLayout />}>
+                <Route path="/" element={<Lazy Component={PublicHomePage} />} />
+                <Route path="/posts/:slug" element={<Lazy Component={PublicPostDetailPage} />} />
+                <Route path="/categories/:slug" element={<Lazy Component={PublicCategoryPage} />} />
+                <Route path="/categories" element={<Lazy Component={PublicTaxonomyListPage} />} />
+                <Route path="/tags/:slug" element={<Lazy Component={PublicTagPage} />} />
+                <Route path="/author" element={<Lazy Component={PublicAuthorPage} />} />
+                <Route path="*" element={<Lazy Component={NotFoundPage} />} />
+            </Route>
         </Routes>
     );
 }

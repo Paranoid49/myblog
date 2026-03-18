@@ -55,11 +55,7 @@ export default function SetupPage() {
   }
 
   if (loading) {
-    return (
-      <div className="site-frame center-frame">
-        <div className="notice muted">检查初始化状态...</div>
-      </div>
-    );
+    return null;
   }
 
   return (

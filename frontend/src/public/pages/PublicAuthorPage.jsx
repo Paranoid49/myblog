@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../../shared/api/client';
-import PublicLayout from '../../shared/layout/PublicLayout';
+import { PageHero } from '../../shared/layout/PublicLayout';
+
+// 模块级缓存
+let cachedAuthor = null;
 
 function renderAvatar(author) {
   if (author.avatar) {
@@ -10,17 +13,22 @@ function renderAvatar(author) {
 }
 
 export default function PublicAuthorPage() {
-  const [author, setAuthor] = useState(null);
+  const [author, setAuthor] = useState(cachedAuthor);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (cachedAuthor) return;
     apiRequest('/author')
-      .then((data) => setAuthor(data))
+      .then((data) => {
+        cachedAuthor = data;
+        setAuthor(data);
+      })
       .catch((e) => setError(e.message || 'load_failed'));
   }, []);
 
   return (
-    <PublicLayout title="关于作者" description="站点作者的基本资料与联系方式。">
+    <>
+      <PageHero title="关于作者" description="站点作者的基本资料与联系方式。" />
       {error ? <div className="notice error">{error}</div> : null}
       {!author ? <div className="notice muted">加载中...</div> : null}
 
@@ -43,6 +51,6 @@ export default function PublicAuthorPage() {
           </div>
         </section>
       ) : null}
-    </PublicLayout>
+    </>
   );
 }

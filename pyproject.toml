@@ -2,6 +2,7 @@
 name = "myblog"
 version = "1.0.0"
 description = "轻量、克制、可扩展的个人博客系统"
+license = "MIT"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
@@ -14,6 +15,7 @@ dependencies = [
     "pypinyin>=0.52",
     "python-multipart>=0.0.9",
     "itsdangerous>=2.2",
+    "psycopg[binary]>=3.0",
 ]
 
 [project.optional-dependencies]
@@ -22,9 +24,6 @@ dev = [
     "pytest-cov>=5.0",
     "httpx>=0.27",
     "ruff>=0.8",
-]
-pg = [
-    "psycopg[binary]>=3.0",
 ]
 
 [tool.pytest.ini_options]

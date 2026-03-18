@@ -1,8 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useTheme } from '../theme/ThemeProvider';
 import { useSite } from '../site/SiteProvider';
 
-export default function PublicLayout({ title, description, children }) {
+export default function PublicLayout() {
   const { blogTitle } = useSite();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
@@ -29,18 +30,22 @@ export default function PublicLayout({ title, description, children }) {
       </header>
 
       <main className="app-shell public-shell">
-        {title ? (
-          <section className="page-hero">
-            <h1>{title}</h1>
-            {description ? <p className="hero-description muted">{description}</p> : null}
-          </section>
-        ) : null}
-        {children}
+        <Outlet />
       </main>
 
       <footer className="site-footer">
         &copy; {new Date().getFullYear()} {blogTitle || 'myblog'}
       </footer>
     </div>
+  );
+}
+
+export function PageHero({ title, description }) {
+  if (!title) return null;
+  return (
+    <section className="page-hero">
+      <h1>{title}</h1>
+      {description ? <p className="hero-description muted">{description}</p> : null}
+    </section>
   );
 }

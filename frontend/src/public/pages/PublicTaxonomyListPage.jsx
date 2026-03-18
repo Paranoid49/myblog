@@ -2,11 +2,17 @@ import { Link, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../../shared/api/client';
 import { formatDate } from '../../shared/utils/format';
-import PublicLayout from '../../shared/layout/PublicLayout';
+import { PageHero } from '../../shared/layout/PublicLayout';
+
+// 模块级缓存，按 "type:slug" 存储
+const taxonomyCache = new Map();
 
 export default function PublicTaxonomyListPage({ type }) {
   const { slug } = useParams();
-  const [payload, setPayload] = useState(null);
+  const cacheKey = `${type}:${slug}`;
+  const cached = slug ? taxonomyCache.get(cacheKey) : null;
+
+  const [payload, setPayload] = useState(cached || null);
   const [error, setError] = useState('');
 
   const isCategory = type === 'category';
@@ -15,21 +21,29 @@ export default function PublicTaxonomyListPage({ type }) {
 
   useEffect(() => {
     if (!slug) return;
+    if (taxonomyCache.has(cacheKey)) {
+      setPayload(taxonomyCache.get(cacheKey));
+      return;
+    }
     setPayload(null);
     setError('');
     apiRequest(`/${apiPath}/${encodeURIComponent(slug)}`)
-      .then((data) => setPayload(data))
+      .then((data) => {
+        taxonomyCache.set(cacheKey, data);
+        setPayload(data);
+      })
       .catch((e) => setError(e.message || 'load_failed'));
-  }, [slug, apiPath]);
+  }, [slug, apiPath, cacheKey]);
 
   const taxonomy = isCategory ? payload?.category : payload?.tag;
   const posts = payload?.posts?.items || [];
 
   return (
-    <PublicLayout
-      title={taxonomy?.name || `${label}文章`}
-      description={taxonomy ? `${label}：${isCategory ? '' : '#'}${taxonomy.name}` : `按${label}浏览文章。`}
-    >
+    <>
+      <PageHero
+        title={taxonomy?.name || `${label}文章`}
+        description={taxonomy ? `${label}：${isCategory ? '' : '#'}${taxonomy.name}` : `按${label}浏览文章。`}
+      />
       {error ? <div className="notice error">{error}</div> : null}
       {!payload ? <div className="notice muted">加载中...</div> : null}
       {payload && !posts.length ? <div className="notice muted">该{label}下暂无已发布文章。</div> : null}
@@ -47,6 +61,6 @@ export default function PublicTaxonomyListPage({ type }) {
           </article>
         ))}
       </section>
-    </PublicLayout>
+    </>
   );
 }

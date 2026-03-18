@@ -185,6 +185,71 @@ pytest
 
 ---
 
+## Docker 部署
+
+### 前置条件
+
+- 安装 Docker 和 Docker Compose
+- 准备 `.env` 文件（参考项目根目录 `.env` 格式）
+
+`.env` 最小配置：
+
+```env
+SECRET_KEY=你的随机密钥至少32个字符
+```
+
+### 默认部署（SQLite）
+
+不需要额外配置数据库，直接启动：
+
+```bash
+docker compose up -d --build
+```
+
+默认使用 SQLite，数据库文件持久化在宿主机 `./data/myblog.db`。
+
+访问 `http://localhost` 即可使用。
+
+### 切换到 PostgreSQL
+
+在 `.env` 中添加 `DATABASE_URL` 即可覆盖默认的 SQLite：
+
+```env
+SECRET_KEY=你的随机密钥至少32个字符
+DATABASE_URL=postgresql+psycopg://用户名:密码@数据库地址:5432/数据库名
+```
+
+PostgreSQL 需要你自行准备（独立安装或另起容器均可），项目镜像已内置 `psycopg` 驱动，无需额外安装。
+
+然后正常启动：
+
+```bash
+docker compose up -d --build
+```
+
+### 数据库切换原理
+
+`docker-compose.yml` 中使用环境变量默认值语法：
+
+```yaml
+DATABASE_URL=${DATABASE_URL:-sqlite:////app/data/myblog.db}
+```
+
+- `.env` 未配置 `DATABASE_URL` → 使用 SQLite
+- `.env` 配置了 `DATABASE_URL` → 使用配置的数据库
+
+容器启动时自动执行 `alembic upgrade head` 完成建表，无需手动迁移。
+
+### 服务架构
+
+部署后包含三个服务：
+
+- `backend` — FastAPI 后端，监听 8000 端口（仅内部暴露）
+- `frontend-build` — 构建前端产物后自动退出
+- `nginx` — 反向代理，对外暴露 80 端口，负责前端静态资源和 API 转发
+
+---
+
 ## 不建议的做法
 
 - 不建议在前端运行时代码中直接拼接后端 base URL
